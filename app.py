@@ -70,7 +70,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 狀態管理 (支援國內外自訂地點儲存)
+# 2. 狀態管理
 # -------------------------------------------------------------
 DEFAULT_PRESETS = {
     "臺北信義": {"lat": 25.0330, "lon": 121.5654},
@@ -83,16 +83,16 @@ if "saved_locations" not in st.session_state:
     st.session_state.saved_locations = DEFAULT_PRESETS.copy()
 
 if "active_target" not in st.session_state:
-    st.session_state.active_target = None
+    # 預設起點座標（東勢）
+    st.session_state.active_target = {"name": "目前所在地", "lat": 24.2586, "lon": 120.8283}
 
 # -------------------------------------------------------------
-# 3. 全球動態地理服務（出國可用、全球精準反查、零經緯度干擾）
+# 3. 全球動態地理服務（支援國內外、徹底消除重複贅字）
 # -------------------------------------------------------------
 @st.cache_data(ttl=86400, show_spinner=False)
 def reverse_geocode_global(lat: float, lon: float) -> str:
-    """無論人在台灣還是海外，純淨反查中文地名"""
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1&accept-language=zh-TW,zh"
-    headers = {"User-Agent": "SkyCastGlobal/5.0"}
+    headers = {"User-Agent": "SkyCastGlobal/6.0"}
     try:
         resp = requests.get(url, headers=headers, timeout=3.5)
         if resp.status_code == 200:
@@ -101,45 +101,36 @@ def reverse_geocode_global(lat: float, lon: float) -> str:
             city = addr.get("city") or addr.get("county") or addr.get("state") or ""
             district = addr.get("suburb") or addr.get("district") or addr.get("town") or addr.get("village") or ""
             
-            # 若為台灣，省略國名；若為海外，保留國家與行政區
             if country in ["臺灣", "台湾"]:
                 name = f"{city}{district}".strip()
             else:
                 name = f"{country} {city} {district}".strip()
                 
-            if name:
+            if name and name != "目前所在地":
                 return name
     except Exception:
         pass
-    return "目前所在地"
+    return "臺中市東勢區"
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_ip_fallback():
-    """當瀏覽器 GPS 尚未就緒時，依據設備對外 IP 秒取當前城市（國內外皆通用）"""
     try:
         res = requests.get("https://ipapi.co/json/", timeout=3.0).json()
-        city = res.get("city", "臺中市")
-        region = res.get("region", "")
-        country = res.get("country_name", "臺灣")
+        city = res.get("city", "東勢區")
+        region = res.get("region", "臺中市")
         lat = float(res.get("latitude", 24.2586))
         lon = float(res.get("longitude", 120.8283))
-        
-        display = f"{region} {city}".strip() if country in ["Taiwan", "臺灣"] else f"{country} {city}".strip()
-        return lat, lon, display
+        return lat, lon, f"{region}{city}".strip()
     except Exception:
         return 24.2586, 120.8283, "臺中市東勢區"
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def global_search_location(query: str):
-    """
-    即時全球動態地理搜尋：
-    台灣鄉鎮（如「豐原」、「東勢」、「竹北」）與海外城市（如「東京」、「倫敦」、「紐約」）通通秒搜
-    """
     clean_q = query.strip()
     if not clean_q:
         return None, None, None
 
-    # 1. 優先使用 Open-Meteo 全球地理編碼（含中文化城市庫）
+    # 1. Open-Meteo Geocoding
     try:
         om_url = f"https://geocoding-api.open-meteo.com/v1/search?name={clean_q}&count=5&language=zh&format=json"
         res = requests.get(om_url, timeout=3.5).json()
@@ -150,7 +141,6 @@ def global_search_location(query: str):
             admin1 = top.get("admin1", "")
             country = top.get("country", "")
             
-            # 組織易讀的地標標題
             if country in ["臺灣", "台湾"]:
                 full_name = f"{admin1}{name}" if admin1 and admin1 not in name else name
             else:
@@ -160,8 +150,8 @@ def global_search_location(query: str):
     except Exception:
         pass
 
-    # 2. 次選方案：OpenStreetMap 全球地標資料庫
-    headers = {"User-Agent": "SkyCastGlobal/5.0"}
+    # 2. OSM Nominatim 備援搜尋
+    headers = {"User-Agent": "SkyCastGlobal/6.0"}
     try:
         osm_url = f"https://nominatim.openstreetmap.org/search?format=json&q={clean_q}&limit=1&accept-language=zh-TW,zh"
         resp = requests.get(osm_url, headers=headers, timeout=3.5)
@@ -177,7 +167,7 @@ def global_search_location(query: str):
     return None, None, None
 
 # -------------------------------------------------------------
-# 4. 全球氣候、紫外線與空氣品質 API (自動判斷時區)
+# 4. 氣候 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -213,7 +203,6 @@ def parse_uv_level(uv_val: float):
 
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_weather_and_aqi(lat: float, lon: float):
-    # 使用 timezone=auto 自動適應當地時間，出國也不會時間錯亂
     weather_url = (
         f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
         f"&current=temperature_2m,relative_humidity_2m,weather_code,apparent_temperature,precipitation,wind_speed_10m,uv_index"
@@ -244,7 +233,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 5. 生活小幫手智慧決策引擎
+# 5. 生活小幫手決策引擎（加入通勤指引，移除洗車）
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
@@ -302,15 +291,16 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         * **收衣時間**：建議於傍晚 5 點前收納入室，避免日落後地表濕氣返潮。
         """
 
+    # 替代洗車：通勤與出行指引
     if rain_prob >= 50:
-        sport_status = "路面濕滑易有雨，建議室內重訓、瑜伽或伸展運動。"
-        wash_car = "不建議洗車（易受降雨或泥水污染）。"
-    elif uv_val >= 8:
-        sport_status = "紫外線過量！戶外長跑容易曬傷中暑，建議改至室內或傍晚日落後進行。"
-        wash_car = "適宜洗車，晴朗好天氣車身快乾。"
+        commute_tip = "路面潮濕易打滑，騎車行經斑馬線與金屬孔蓋請減速；建議備好兩截式雨衣。"
+        sport_status = "戶外濕滑易雨，建議改至室內健身、瑜伽或居家伸展運動。"
+    elif wind_speed > 20:
+        commute_tip = "戶外側風強勁，高架橋或空曠路段騎車開車請握緊龍頭/方向盤並注意安全車距。"
+        sport_status = "風力稍大，羽球或高空球類運動不宜，慢跑請留意風阻。"
     else:
-        sport_status = "天候舒適，適合戶外慢跑、健走或單車騎乘。"
-        wash_car = "適宜洗車打蠟，車身可維持多日乾淨光亮。"
+        commute_tip = "天候晴朗乾燥，視線良好，各類通勤出行均非常順暢安全。"
+        sport_status = "天候舒適宜人，非常適合慢跑、騎乘自行車或散步。"
 
     pack_items = []
     if rain_prob >= 40:
@@ -327,109 +317,99 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     if not pack_items:
         pack_items.append("😊 輕鬆好心情即可輕便出門！")
 
-    return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, wash_car, pack_items, uv_status
+    return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 6. 動態定位與頂部導航列
+# 6. 定位與搜尋控制列（徹底修復按鍵無反應與狀態覆蓋問題）
 # -------------------------------------------------------------
-# 1. 抓取真實設備 GPS（出國或在台皆適用）
 geo = get_geolocation()
 current_gps_title = None
-current_gps_coords = None
 
 if geo and "coords" in geo:
     u_lat = geo["coords"]["latitude"]
     u_lon = geo["coords"]["longitude"]
     loc_clean = reverse_geocode_global(u_lat, u_lon)
-    current_gps_title = f"📍 目前所在地 ({loc_clean})"
-    current_gps_coords = (u_lat, u_lon)
-
-# 2. 初始化目前目標地點
-if st.session_state.active_target is None:
-    if current_gps_coords:
+    current_gps_title = f"📍 目前所在地：{loc_clean}"
+    
+    # 第一次進入且尚未手動搜尋時，自動對齊真實 GPS
+    if not st.session_state.get("has_searched", False):
         st.session_state.active_target = {
             "name": current_gps_title,
-            "lat": current_gps_coords[0],
-            "lon": current_gps_coords[1]
+            "lat": u_lat,
+            "lon": u_lon
         }
-    else:
-        # 設備 GPS 尚未回傳前，採用 IP 平滑降級，不再寫死跳回台北
+else:
+    if not st.session_state.get("has_searched", False):
         ip_lat, ip_lon, ip_name = get_ip_fallback()
         st.session_state.active_target = {
-            "name": f"📍 目前所在地 ({ip_name})",
+            "name": f"📍 目前所在地：{ip_name}",
             "lat": ip_lat,
             "lon": ip_lon
         }
-else:
-    # 若先前為預設狀態，當真實 GPS 讀取成功後自動無感切換
-    if current_gps_coords and not st.session_state.get("is_manual", False):
-        st.session_state.active_target = {
-            "name": current_gps_title,
-            "lat": current_gps_coords[0],
-            "lon": current_gps_coords[1]
-        }
 
-# 快捷下拉清單（以目前所在地置頂）
-location_menu = {}
-if current_gps_title:
-    location_menu[current_gps_title] = current_gps_coords
-else:
-    location_menu[st.session_state.active_target["name"]] = (st.session_state.active_target["lat"], st.session_state.active_target["lon"])
+# 頂部導航列排版
+c_logo, c_search, c_select = st.columns([1.2, 1.8, 1.3], gap="medium")
 
-location_menu.update({k: (v["lat"], v["lon"]) for k, v in st.session_state.saved_locations.items()})
+with c_logo:
+    st.markdown("### 🌤️ SkyCast 天氣管家")
 
-# 頂部控制看板：Logo + 全球即時搜尋 + 常用地點下拉選單
-col_logo, col_search_bar, col_switch_bar = st.columns([1.2, 1.8, 1.3], gap="medium")
+# 使用 st.form 封裝搜尋框，支援 Enter 與按鈕雙重即時提交
+with c_search:
+    with st.form("search_form", border=False):
+        s_in, s_btn = st.columns([3.5, 1])
+        with s_in:
+            search_query = st.text_input(
+                "全球地名搜尋",
+                placeholder="輸入國內外地名（例：竹北、東勢、豐原、東京...）",
+                label_visibility="collapsed"
+            )
+        with s_btn:
+            submit_search = st.form_submit_button("🔍 查詢", use_container_width=True)
 
-with col_logo:
-    st.markdown("### 🌤️ SkyCast 全球天氣管家")
-
-with col_search_bar:
-    s_col_input, s_col_btn = st.columns([3.5, 1])
-    with s_col_input:
-        user_input_query = st.text_input(
-            "全球地名搜尋",
-            placeholder="輸入國內外地名（例：東勢、竹北、東京、巴黎...）",
-            label_visibility="collapsed"
-        )
-    with s_col_btn:
-        search_clicked = st.button("🔍 查詢", use_container_width=True)
-
-with col_switch_bar:
-    menu_keys = list(location_menu.keys())
-    cur_name = st.session_state.active_target["name"]
-    curr_idx = menu_keys.index(cur_name) if cur_name in menu_keys else 0
-
-    dropdown_pick = st.selectbox(
-        "快速切換地點",
-        options=menu_keys,
-        index=curr_idx,
-        label_visibility="collapsed"
-    )
-    if dropdown_pick != cur_name and not search_clicked:
-        pick_lat, pick_lon = location_menu[dropdown_pick]
-        st.session_state.active_target = {
-            "name": dropdown_pick,
-            "lat": pick_lat,
-            "lon": pick_lon
-        }
-        st.session_state.is_manual = True
-        st.rerun()
-
-# 執行即時全球搜尋
-if search_clicked and user_input_query:
-    with st.spinner("即時定位搜尋中..."):
-        f_lat, f_lon, f_name = global_search_location(user_input_query)
+# 搜尋邏輯觸發（點擊查詢或鍵盤按下 Enter）
+if submit_search and search_query:
+    with st.spinner(f"正在定位「{search_query}」..."):
+        f_lat, f_lon, f_name = global_search_location(search_query)
         if f_lat and f_lon:
             st.session_state.active_target = {
-                "name": f"🔎 {f_name}",
+                "name": f"📍 {f_name}",
                 "lat": f_lat,
                 "lon": f_lon
             }
-            st.session_state.is_manual = True
+            st.session_state.has_searched = True
             st.rerun()
         else:
-            st.error(f"找不到「{user_input_query}」，請確認名稱是否正確。")
+            st.error(f"找不到「{search_query}」，請確認名稱是否正確。")
+
+# 快捷下拉清單（保證當前目標也在清單中，防止被重置）
+cur_display_name = st.session_state.active_target["name"]
+quick_options = [cur_display_name]
+
+# 加入預設收藏
+for p_name in st.session_state.saved_locations.keys():
+    if p_name not in quick_options:
+        quick_options.append(p_name)
+
+with c_select:
+    def on_dropdown_select():
+        chosen = st.session_state["dropdown_selection"]
+        if chosen in st.session_state.saved_locations:
+            item = st.session_state.saved_locations[chosen]
+            st.session_state.active_target = {
+                "name": chosen,
+                "lat": item["lat"],
+                "lon": item["lon"]
+            }
+            st.session_state.has_searched = True
+
+    st.selectbox(
+        "快速切換地點",
+        options=quick_options,
+        index=0,
+        key="dropdown_selection",
+        on_change=on_dropdown_select,
+        label_visibility="collapsed"
+    )
 
 # -------------------------------------------------------------
 # 7. 當前地點操作列（⭐ 收藏此地 / 🗑️ 移除收藏）
@@ -443,25 +423,20 @@ with col_cur_title:
     st.markdown(f"**目前觀測地點：** `{active_name}`")
 
 with col_actions:
-    clean_key = active_name.replace("🔎 ", "").replace("⭐ ", "")
+    clean_key = active_name.replace("📍 ", "").replace("🔎 ", "").replace("⭐ ", "")
     is_saved = clean_key in st.session_state.saved_locations
 
     if not is_saved and "目前所在地" not in active_name:
         if st.button("⭐ 收藏此地點", use_container_width=True):
             st.session_state.saved_locations[clean_key] = {"lat": active_lat, "lon": active_lon}
             st.session_state.active_target["name"] = clean_key
-            st.success(f"已成功收藏「{clean_key}」！")
+            st.success(f"已收藏「{clean_key}」！")
             time.sleep(0.3)
             st.rerun()
     elif is_saved and clean_key not in DEFAULT_PRESETS:
         if st.button("🗑️ 移除收藏", use_container_width=True):
             del st.session_state.saved_locations[clean_key]
-            first_key = list(location_menu.keys())[0]
-            st.session_state.active_target = {
-                "name": first_key,
-                "lat": location_menu[first_key][0],
-                "lon": location_menu[first_key][1]
-            }
+            st.session_state.has_searched = False
             st.rerun()
 
 # -------------------------------------------------------------
@@ -506,7 +481,7 @@ elif cur_temp <= 18:
 else:
     hero_bg = "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)"
 
-intro, w_head, w_desc, d_head, d_desc, sport_tip, car_tip, pack_list, uv_status_str = get_comprehensive_assistant_advice(
+intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_list, uv_status_str = get_comprehensive_assistant_advice(
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
 
@@ -554,9 +529,10 @@ with right_col:
     with st.expander(f"🧺 **曬衣防霉攻略**：{d_head}", expanded=False):
         st.markdown(d_desc)
 
+    # 兩大生活卡片：戶外運動 + 通勤出行（取代原先的洗車）
     col_act1, col_act2 = st.columns(2)
     col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
-    col_act2.info(f"🚗 **洗車與保養**\n\n{car_tip}")
+    col_act2.info(f"🛵 **通勤與出行指引**\n\n{commute_tip}")
 
     st.caption("🎒 **隨身行囊建議**：" + " ｜ ".join(pack_list))
 
