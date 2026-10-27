@@ -3,9 +3,4 @@ requests
 folium
 streamlit-folium
 pandas
-streamlit-js-evalstreamlit
-requests
-folium
-streamlit-folium
-pandas
 streamlit-js-eval
