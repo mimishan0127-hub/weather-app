@@ -5,7 +5,11 @@ from streamlit_folium import st_folium
 import pandas as pd
 from streamlit_js_eval import get_geolocation
 
-st.set_page_config(page_title="即時天氣", page_icon="🌤️", layout="wide")
+st.set_page_config(
+    page_title="即時天氣觀測與生活指南",
+    page_icon="🌤️",
+    layout="wide"
+)
 
 # 1. 預設常備地點清單
 DEFAULT_LOCS = {
@@ -18,7 +22,7 @@ DEFAULT_LOCS = {
 if "locations" not in st.session_state:
     st.session_state.locations = DEFAULT_LOCS.copy()
 
-# 2. GPS 反查簡短地名
+# 2. GPS 反查地名
 @st.cache_data(ttl=86400)
 def get_clean_location_name(lat, lon):
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1"
@@ -46,7 +50,7 @@ def find_coords(query):
         pass
     return None, None, None
 
-# 4. 天氣圖示與狀態代碼對照
+# 4. 天氣圖示對照
 WEATHER_MAP = {
     0: ("☀️", "晴天"),
     1: ("🌤️", "晴時多雲"),
@@ -78,30 +82,57 @@ def fetch_weather(lat, lon):
     except Exception:
         return None
 
-# 6. 極簡生活建議 (精簡短句)
-def get_concise_tips(temp, rain, humidity):
-    # 穿搭
-    wear = "透氣短袖" if temp >= 28 else ("舒適短袖+薄衫" if temp >= 20 else "保暖長袖外套")
-    # 曬衣
-    dry = "極佳（速乾）" if rain < 30 and humidity < 75 else "不宜（易潮濕/降雨）"
-    # 雨具
-    umbrella = "務必帶傘" if rain >= 40 else "不需帶傘"
-    # 運動
-    sport = "室內活動為佳" if rain >= 50 else "適合戶外運動"
-    
-    return [
-        f"👕 **穿著**：{wear}",
-        f"☔ **外出**：{umbrella}",
-        f"🧺 **曬衣**：{dry}",
-        f"🏃 **運動**：{sport}"
-    ]
+# 6. 穿搭與曬衣的詳細指引邏輯
+def get_detailed_wear_advice(temp):
+    if temp >= 28:
+        summary = "透氣短袖 / 排汗衫"
+        details = """
+        * **衣物材質**：建議選擇棉麻、亞麻或排汗速乾機能面料。
+        * **防曬搭配**：日間紫外線強烈，建議配戴遮陽帽、抗 UV 薄外套或墨鏡。
+        * **室內冷氣**：辦公室或室內空調環境可自備一件超薄開襟衫防受涼。
+        """
+    elif 20 <= temp < 28:
+        summary = "休閒短袖搭配薄衫 / 襯衫"
+        details = """
+        * **衣物材質**：純棉 T-shirt、輕薄長袖或棉質襯衫。
+        * **早晚溫差**：日夜可能有 3~5°C 溫差，外出可準備一件牛仔外套或連帽薄外套。
+        * **舒適度**：氣溫適中，單穿一件上衣加薄長褲即可活動自如。
+        """
+    else:
+        summary = "保暖長袖搭配防風外套"
+        details = """
+        * **洋蔥式穿搭**：內層穿著發熱衣或棉質長袖，外層加穿厚外套或防風防潑水夾克。
+        * **配件建議**：風大時可配戴薄圍巾或防風口罩，避免頭部與頸部著涼。
+        """
+    return summary, details
 
-# ----------------- 畫面核心邏輯 -----------------
+def get_detailed_dry_advice(rain, humidity):
+    if rain < 30 and humidity < 75:
+        summary = "非常適合戶外曬衣（快乾）"
+        details = """
+        * **衣物晾乾速度**：陽光與濕度條件良好，一般薄衣物約 3~4 小時可全乾。
+        * **注意事項**：中午時段陽光充足，深色或特殊面料建議翻面曬晾以防褪色。
+        * **適合洗滌**：床單、被套、大毛巾等厚重大件織物可趁今日清洗。
+        """
+    elif rain >= 50 or humidity >= 85:
+        summary = "不宜戶外曬衣（建議室內除濕）"
+        details = """
+        * **潮濕風險**：室外降雨機率高且空氣飽和，衣物容易吸附濕氣或產生霉味。
+        * **替代方案**：請將衣物置於室內，搭配除濕機或使用烘衣機低溫烘乾。
+        * **通風建議**：室內晾衣請保持空氣流通，拉開衣物間距至少一個拳頭寬。
+        """
+    else:
+        summary = "陽台陰涼通風處晾乾"
+        details = """
+        * **天氣變數**：濕度稍偏高或有局部微雨可能，建議晾在有遮雨棚的陽台。
+        * **曬衣時程**：建議傍晚前收進室內，避免夜晚返潮影響乾爽度。
+        """
+    return summary, details
 
-# 自動取得真實設備 GPS
+# ----------------- 頁面主體 -----------------
+
+# 抓取設備 GPS
 geo = get_geolocation()
-current_gps_label = None
-
 if geo and "coords" in geo:
     u_lat, u_lon = geo["coords"]["latitude"], geo["coords"]["longitude"]
     loc_title = get_clean_location_name(u_lat, u_lon)
@@ -111,15 +142,16 @@ if geo and "coords" in geo:
 else:
     active_locs = st.session_state.locations
 
-# 頁面頂部：精簡切換選單
-col_select, _ = st.columns([2, 1])
-with col_select:
-    selected_name = st.selectbox(
-        "選擇地點：",
-        options=list(active_locs.keys()),
-        index=0,
-        label_visibility="collapsed"
-    )
+# 主標題區
+st.markdown("### 🌤️ 台灣即時天氣觀測與生活行動指南")
+
+# 地點選擇下拉列
+selected_name = st.selectbox(
+    "觀測地點切換：",
+    options=list(active_locs.keys()),
+    index=0,
+    help="首項為偵測出的即時位置，可於「管理地點」新增關注區域"
+)
 
 target = active_locs[selected_name]
 lat, lon = target["lat"], target["lon"]
@@ -145,14 +177,14 @@ else:
     times = ["12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
     temps, rains, codes = [24.0]*6, [10]*6, [1]*6
 
-# 首頁整合分頁：主看天天氣 / 管理與自訂地點
-tab_weather, tab_manage = st.tabs(["🌤️ 即時天氣與預報", "⚙️ 新增 / 管理地點"])
+# 首頁分頁
+tab_weather, tab_manage = st.tabs(["📊 即時觀測與預報", "⚙️ 新增與管理自訂地點"])
 
 with tab_weather:
     col_map, col_info = st.columns([1.1, 1.2])
 
     with col_map:
-        # 地圖
+        st.markdown("##### 🗺️ 觀測點周邊地圖")
         m = folium.Map(location=[lat, lon], zoom_start=13, tiles="OpenStreetMap")
         folium.Marker(
             [lat, lon],
@@ -162,67 +194,85 @@ with tab_weather:
         st_folium(m, width=500, height=340, returned_objects=[])
 
     with col_info:
-        # 核心看板（無冗長標題，開門見山）
+        st.markdown("##### ⚡ 當前微氣候狀態")
+        
+        # 視覺化看板
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #3A7BD5 0%, #3A6073 100%); padding: 18px 22px; border-radius: 12px; color: white; margin-bottom: 15px;">
-            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;">{icon} {temp}°C ｜ {status}</div>
-            <div style="font-size: 14px; opacity: 0.9;">體感 {feels}°C · 濕度 {humidity}% · 降雨機率 {rain_now}%</div>
+        <div style="background: linear-gradient(135deg, #3A7BD5 0%, #3A6073 100%); padding: 16px 20px; border-radius: 12px; color: white; margin-bottom: 12px;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 4px;">{icon} {temp}°C ｜ {status}</div>
+            <div style="font-size: 14px; opacity: 0.9;">體感 {feels}°C ｜ 濕度 {humidity}% ｜ 降雨機率 {rain_now}%</div>
         </div>
         """, unsafe_allow_html=True)
 
-        # 4 項極簡建議卡
-        tips = get_concise_tips(temp, rain_now, humidity)
-        tc1, tc2 = st.columns(2)
-        tc1.info(tips[0])
-        tc1.info(tips[1])
-        tc2.info(tips[2])
-        tc2.info(tips[3])
+        st.markdown("##### 💡 生活與穿著行動指引")
+        
+        wear_sum, wear_det = get_detailed_wear_advice(temp)
+        dry_sum, dry_det = get_detailed_dry_advice(rain_now, humidity)
+        umbrella = "務必攜帶雨具外出" if rain_now >= 40 else "降雨機率低，外出輕便"
+        sport = "建議室內活動或運動" if rain_now >= 50 else "舒適，非常適合戶外運動"
 
-    # 下方：近 6 小時微氣象
-    st.markdown("##### ⏱️ 未來 6 小時趨勢")
+        # 穿著建議（含隱藏式抽屜）
+        with st.expander(f"👕 **今日穿著建議**：{wear_sum}", expanded=False):
+            st.markdown(wear_det)
+
+        # 曬衣建議（含隱藏式抽屜）
+        with st.expander(f"🧺 **曬衣與防潮指數**：{dry_sum}", expanded=False):
+            st.markdown(dry_det)
+
+        # 外出與運動簡要卡
+        c_left, c_right = st.columns(2)
+        c_left.info(f"☔ **外出提醒**：\n{umbrella}")
+        c_right.info(f"🏃 **戶外活動**：\n{sport}")
+
+    # 下方 6 小時預報
+    st.divider()
+    st.markdown("##### ⏱️ 未來 6 小時逐時天氣趨勢")
+    
     h_cols = st.columns(6)
     for i in range(6):
         h_icon, _ = get_weather_info(codes[i])
         with h_cols[i]:
             st.markdown(f"""
-            <div style="border: 1px solid #eee; border-radius: 8px; padding: 6px; text-align: center; background-color: #fafafa;">
-                <div style="font-size: 12px; color: #777;">{times[i]}</div>
-                <div style="font-size: 22px; margin: 2px 0;">{h_icon}</div>
-                <div style="font-size: 14px; font-weight: bold;">{temps[i]}°C</div>
-                <div style="font-size: 11px; color: #2196F3;">💧{rains[i]}%</div>
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center; background-color: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <div style="font-size: 12px; color: #64748b; font-weight: 500;">{times[i]}</div>
+                <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
+                <div style="font-size: 15px; font-weight: bold; color: #1e293b;">{temps[i]}°C</div>
+                <div style="font-size: 11px; color: #0284c7; font-weight: 500;">💧 {rains[i]}%</div>
             </div>
             """, unsafe_allow_html=True)
 
+    st.write("")
     chart_df = pd.DataFrame({
         "時間": times,
         "氣溫 (°C)": temps,
-        "降雨率 (%)": rains
+        "降雨機率 (%)": rains
     }).set_index("時間")
-    st.line_chart(chart_df, height=180)
+    st.line_chart(chart_df, height=190)
 
 with tab_manage:
-    st.markdown("##### ➕ 新增地點")
+    st.markdown("##### ➕ 新增常用關注地點")
+    st.caption("輸入台灣任何地標、景點或鄉鎮名，系統將自動解析座標並加入選單。")
     c_in, c_btn = st.columns([3, 1])
     with c_in:
-        query_loc = st.text_input("輸入地標或地名（例：淡水老街、台中火車站）：", label_visibility="collapsed", placeholder="輸入地標名稱...")
+        query_loc = st.text_input("輸入地標或地名：", label_visibility="collapsed", placeholder="例：日月潭、板橋車站、駁二特區...")
     with c_btn:
-        add_clicked = st.button("加入關注", use_container_width=True)
+        add_clicked = st.button("加入清單", use_container_width=True)
 
     if add_clicked and query_loc:
-        with st.spinner("搜尋座標中..."):
+        with st.spinner("正在搜尋座標..."):
             s_lat, s_lon, formal = find_coords(query_loc)
             if s_lat and s_lon:
                 st.session_state.locations[query_loc] = {"lat": s_lat, "lon": s_lon}
-                st.success(f"已新增：{query_loc}")
+                st.success(f"已成功加入「{query_loc}」！可在上方下拉選單切換。")
                 st.rerun()
             else:
-                st.error("找不到該地點，請輸入更精確的地名。")
+                st.error("找不到該地點，請輸入更精確的地名後再試。")
 
     st.divider()
     st.markdown("##### 🗑️ 刪除自訂地點")
     c_sel, c_del = st.columns([3, 1])
     with c_sel:
-        del_target = st.selectbox("選擇要刪除的地點：", list(st.session_state.locations.keys()), label_visibility="collapsed")
+        del_target = st.selectbox("選擇要移除的地點：", list(st.session_state.locations.keys()), label_visibility="collapsed")
     with c_del:
         if st.button("確認刪除", use_container_width=True):
             if del_target in st.session_state.locations:
