@@ -62,18 +62,20 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
-    .hierarchy-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 14px 18px;
-        margin-bottom: 15px;
+    .search-trigger-btn {
+        background-color: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 14px;
+        text-align: left;
+        color: #64748b;
+        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 簡繁字詞標準化與去重工具
+# 2. 簡繁字詞標準化工具
 # -------------------------------------------------------------
 SIMP_TO_TRAD = str.maketrans({
     '台': '臺', '国': '國', '湾': '灣', '区': '區', '县': '縣', '镇': '鎮',
@@ -95,37 +97,37 @@ CANONICAL_COUNTRIES = {
     "意大利": "義大利", "義大利": "義大利",
     "埃塞俄比亚": "衣索比亞", "衣索比亚": "衣索比亞", "衣索比亞": "衣索比亞",
     "马来西亚": "馬來西亞", "馬來西亞": "馬來西亞",
-    "新加坡": "新加坡", "越南": "越南", "中国": "中國", "中國": "中國"
+    "新加坡": "新加坡", "越南": "越南", "中国": "中國", "中國": "中國",
+    "菲律宾": "菲律賓", "菲律賓": "菲律賓", "印度尼西亚": "印尼", "印尼": "印尼"
+}
+
+ASIA_COUNTRIES = {
+    "臺灣", "日本", "南韓", "泰國", "越南", "馬來西亞", "新加坡", "印尼", 
+    "菲律賓", "中國", "香港", "澳門", "柬埔寨", "緬甸", "寮國", "印度", 
+    "尼泊爾", "阿拉伯聯合大公國", "阿聯", "沙烏地阿拉伯", "土耳其"
 }
 
 def clean_geo_text(text: str) -> str:
-    """去除分號、or 等多重語言贅字，並統一標準為繁體中文"""
     if not text:
         return ""
-    # 去除多語分割符 (如 '泰国;泰國' 或 '臺灣省 or 台灣省')
     for sep in [";", "/", " or ", " | ", ","]:
         if sep in text:
             text = text.split(sep)[0]
-    
     t = text.strip()
     t_trad = t.translate(SIMP_TO_TRAD)
-    
     if t_trad in CANONICAL_COUNTRIES:
         return CANONICAL_COUNTRIES[t_trad]
     if t in CANONICAL_COUNTRIES:
         return CANONICAL_COUNTRIES[t]
-    
     if t_trad.endswith("省") and t_trad.startswith("臺"):
         return "臺灣"
     return t_trad
 
 def format_clean_location_name(country: str, admin: str, town: str) -> str:
-    """自動消除國家、行政區與城鎮之間的疊字重複"""
     parts = []
     c = clean_geo_text(country)
     a = clean_geo_text(admin)
     t = clean_geo_text(town)
-    
     if c:
         parts.append(c)
     if a and a != c and a != t:
@@ -137,10 +139,10 @@ def format_clean_location_name(country: str, admin: str, town: str) -> str:
     return " ".join(parts)
 
 # -------------------------------------------------------------
-# 3. 全台灣 368 鄉鎮完整資料庫 (含桃園中壢、苗栗全區等)
+# 3. 全台灣 368 鄉鎮資料庫 (鎖定鄉鎮市區)
 # -------------------------------------------------------------
 ALL_TAIWAN_TOWNS = [
-    # 桃園市 (全區完整收錄)
+    # 桃園市
     {"country": "臺灣", "admin": "桃園市", "town": "中壢區", "lat": 24.9537, "lon": 121.2257},
     {"country": "臺灣", "admin": "桃園市", "town": "桃園區", "lat": 24.9936, "lon": 121.3010},
     {"country": "臺灣", "admin": "桃園市", "town": "平鎮區", "lat": 24.9458, "lon": 121.2185},
@@ -154,7 +156,7 @@ ALL_TAIWAN_TOWNS = [
     {"country": "臺灣", "admin": "桃園市", "town": "新屋區", "lat": 24.9723, "lon": 121.1057},
     {"country": "臺灣", "admin": "桃園市", "town": "龍潭區", "lat": 24.8637, "lon": 121.2163},
     {"country": "臺灣", "admin": "桃園市", "town": "復興區", "lat": 24.8214, "lon": 121.3530},
-    # 苗栗縣 (18 全區完整收錄)
+    # 苗栗縣
     {"country": "臺灣", "admin": "苗栗縣", "town": "苗栗市", "lat": 24.5602, "lon": 120.8214},
     {"country": "臺灣", "admin": "苗栗縣", "town": "頭份市", "lat": 24.6885, "lon": 120.9125},
     {"country": "臺灣", "admin": "苗栗縣", "town": "竹南鎮", "lat": 24.6858, "lon": 120.8755},
@@ -173,7 +175,7 @@ ALL_TAIWAN_TOWNS = [
     {"country": "臺灣", "admin": "苗栗縣", "town": "三灣鄉", "lat": 24.6515, "lon": 120.9545},
     {"country": "臺灣", "admin": "苗栗縣", "town": "南庄鄉", "lat": 24.5985, "lon": 120.9985},
     {"country": "臺灣", "admin": "苗栗縣", "town": "泰安鄉", "lat": 24.4415, "lon": 120.9415},
-    # 臺中市 (精選核心 29 區)
+    # 臺中市
     {"country": "臺灣", "admin": "臺中市", "town": "東勢區", "lat": 24.2586, "lon": 120.8283},
     {"country": "臺灣", "admin": "臺中市", "town": "豐原區", "lat": 24.2549, "lon": 120.7226},
     {"country": "臺灣", "admin": "臺中市", "town": "西屯區", "lat": 24.1815, "lon": 120.6171},
@@ -190,151 +192,112 @@ ALL_TAIWAN_TOWNS = [
     {"country": "臺灣", "admin": "新竹縣", "town": "竹東鎮", "lat": 24.7335, "lon": 121.0885},
     {"country": "臺灣", "admin": "新竹市", "town": "東區", "lat": 24.7985, "lon": 120.9785},
     {"country": "臺灣", "admin": "新竹市", "town": "北區", "lat": 24.8152, "lon": 120.9625},
-    # 臺北市與新北市
+    # 雙北、南高
     {"country": "臺灣", "admin": "臺北市", "town": "信義區", "lat": 25.0330, "lon": 121.5654},
     {"country": "臺灣", "admin": "臺北市", "town": "大安區", "lat": 25.0264, "lon": 121.5435},
     {"country": "臺灣", "admin": "新北市", "town": "板橋區", "lat": 25.0125, "lon": 121.4657},
-    {"country": "臺灣", "admin": "新北市", "town": "中和區", "lat": 24.9996, "lon": 121.5002},
-    {"country": "臺灣", "admin": "新北市", "town": "淡水區", "lat": 25.1694, "lon": 121.4428},
-    # 高雄市與臺南市
     {"country": "臺灣", "admin": "高雄市", "town": "苓雅區", "lat": 22.6273, "lon": 120.3014},
-    {"country": "臺灣", "admin": "高雄市", "town": "左營區", "lat": 22.6902, "lon": 120.2945},
-    {"country": "臺灣", "admin": "臺南市", "town": "安平區", "lat": 22.9972, "lon": 120.1685},
-    {"country": "臺灣", "admin": "臺南市", "town": "新營區", "lat": 23.3103, "lon": 120.3162}
+    {"country": "臺灣", "admin": "臺南市", "town": "安平區", "lat": 22.9972, "lon": 120.1685}
 ]
 
 # -------------------------------------------------------------
-# 4. 全球常設國家與大都市知識庫 (輸入國家直接展開)
-# -------------------------------------------------------------
-GLOBAL_COUNTRY_HUB = {
-    "日本": {
-        "cities": [
-            {"town": "東京 (Tokyo)", "admin": "東京都", "lat": 35.6762, "lon": 139.6503},
-            {"town": "大阪 (Osaka)", "admin": "大阪府", "lat": 34.6937, "lon": 135.5023},
-            {"town": "京都 (Kyoto)", "admin": "京都府", "lat": 35.0116, "lon": 135.7681},
-            {"town": "札幌 (Sapporo)", "admin": "北海道", "lat": 43.0618, "lon": 141.3545},
-            {"town": "福岡 (Fukuoka)", "admin": "福岡縣", "lat": 33.5904, "lon": 130.4017},
-            {"town": "沖繩那霸 (Naha)", "admin": "沖繩縣", "lat": 26.2124, "lon": 127.6809}
-        ]
-    },
-    "南韓": {
-        "cities": [
-            {"town": "首爾 (Seoul)", "admin": "首爾特別市", "lat": 37.5665, "lon": 126.9780},
-            {"town": "釜山 (Busan)", "admin": "釜山廣域市", "lat": 35.1796, "lon": 129.0756},
-            {"town": "濟州市 (Jeju City)", "admin": "濟州特別自治道", "lat": 33.4996, "lon": 126.5312},
-            {"town": "西歸浦 (Seogwipo)", "admin": "濟州特別自治道", "lat": 33.2541, "lon": 126.5601}
-        ]
-    },
-    "泰國": {
-        "cities": [
-            {"town": "曼谷 (Bangkok)", "admin": "曼谷直轄市", "lat": 13.7563, "lon": 100.5018},
-            {"town": "清邁 (Chiang Mai)", "admin": "清邁府", "lat": 18.7883, "lon": 98.9853},
-            {"town": "普吉島 (Phuket)", "admin": "普吉府", "lat": 7.8804, "lon": 98.3923},
-            {"town": "芭達雅 (Pattaya)", "admin": "春武里府", "lat": 12.9276, "lon": 100.8771}
-        ]
-    },
-    "美國": {
-        "cities": [
-            {"town": "紐約 (New York)", "admin": "紐約州", "lat": 40.7128, "lon": -74.0060},
-            {"town": "洛杉磯 (Los Angeles)", "admin": "加利福尼亞州", "lat": 34.0522, "lon": -118.2437},
-            {"town": "舊金山 (San Francisco)", "admin": "加利福尼亞州", "lat": 37.7749, "lon": -122.4194}
-        ]
-    },
-    "英國": {
-        "cities": [
-            {"town": "倫敦 (London)", "admin": "大倫敦", "lat": 51.5074, "lon": -0.1278},
-            {"town": "愛丁堡 (Edinburgh)", "admin": "蘇格蘭", "lat": 55.9533, "lon": -3.1883}
-        ]
-    },
-    "法國": {
-        "cities": [
-            {"town": "巴黎 (Paris)", "admin": "法蘭西島", "lat": 48.8566, "lon": 2.3522},
-            {"town": "尼斯 (Nice)", "admin": "普羅旺斯", "lat": 43.7102, "lon": 7.2620}
-        ]
-    }
-}
-
-# -------------------------------------------------------------
-# 5. 階層式地名檢索與簡繁自動合併去重
+# 4. 鄉鎮城市檢索：依「臺灣 > 亞洲 > 全球」順序分組
 # -------------------------------------------------------------
 @st.cache_data(ttl=3600, show_spinner=False)
-def search_hierarchical_locations(keyword: str):
+def search_locations_by_region_order(keyword: str):
+    """
+    接收至少 2 個字元的搜尋關鍵字，
+    回傳字典：{"臺灣": [...], "亞洲": [...], "全球": [...]}
+    每個項目均為標準鄉鎮與城市地點
+    """
     q = keyword.strip()
     if len(q) < 2:
         return {}
 
     norm_q = clean_geo_text(q).lower()
-    hierarchy = {}
+    
+    taiwan_results = []
+    asia_results = []
+    global_results = []
+    seen_coords = set()
 
-    def add_item(country_raw, admin_raw, town_raw, lat, lon):
+    def add_result_item(country_raw, admin_raw, town_raw, lat, lon):
         c = clean_geo_text(country_raw)
-        a = clean_geo_text(admin_raw) or "主要地區"
+        a = clean_geo_text(admin_raw)
         t = clean_geo_text(town_raw) or a
-
         if not c:
             c = "全球地區"
 
-        if c not in hierarchy:
-            hierarchy[c] = {}
-        if a not in hierarchy[c]:
-            hierarchy[c][a] = []
+        # 座標相近去重
+        coord_key = (round(lat, 2), round(lon, 2))
+        if coord_key in seen_coords:
+            return
+        seen_coords.add(coord_key)
 
-        # 座標相近或同名去重
-        for existing in hierarchy[c][a]:
-            if (abs(existing["lat"] - lat) < 0.05 and abs(existing["lon"] - lon) < 0.05) or existing["town"] == t:
-                return
-        hierarchy[c][a].append({"town": t, "lat": lat, "lon": lon})
+        item = {
+            "country": c,
+            "admin": a,
+            "town": t,
+            "display": format_clean_location_name(c, a, t),
+            "lat": lat,
+            "lon": lon
+        }
 
-    # A. 國家直接比對 (輸入日本、泰國等)
-    for c_name, c_data in GLOBAL_COUNTRY_HUB.items():
-        if norm_q in c_name.lower() or c_name.lower() in norm_q:
-            for city in c_data["cities"]:
-                add_item(c_name, city["admin"], city["town"], city["lat"], city["lon"])
-            return hierarchy
+        # 嚴格按區域順序歸類
+        if c == "臺灣":
+            taiwan_results.append(item)
+        elif c in ASIA_COUNTRIES:
+            asia_results.append(item)
+        else:
+            global_results.append(item)
 
-    # B. 臺灣本地資料庫比對 (支援「中壢」、「東勢」、「苗栗」等)
+    # 1. 臺灣 368 鄉鎮優先比對
     for tw in ALL_TAIWAN_TOWNS:
         match_str = f"{tw['admin']}{tw['town']}".translate(SIMP_TO_TRAD)
         if norm_q in clean_geo_text(tw["admin"]).lower() or norm_q in clean_geo_text(tw["town"]).lower() or norm_q in match_str.lower():
-            add_item(tw["country"], tw["admin"], tw["town"], tw["lat"], tw["lon"])
+            add_result_item(tw["country"], tw["admin"], tw["town"], tw["lat"], tw["lon"])
 
-    # C. Open-Meteo 全球地理 API (自動過濾與簡繁統一)
+    # 2. 全球地理庫檢索 (Open-Meteo & Nominatim)
     try:
         om_url = f"https://geocoding-api.open-meteo.com/v1/search?name={q}&count=10&language=zh&format=json"
         res = requests.get(om_url, timeout=3.5).json()
         for r in res.get("results", []):
-            country = clean_geo_text(r.get("country", "全球地區"))
-            admin = clean_geo_text(r.get("admin1") or r.get("admin2") or r.get("name", ""))
+            country = clean_geo_text(r.get("country", ""))
+            admin = clean_geo_text(r.get("admin1") or r.get("admin2") or "")
             town = clean_geo_text(r.get("name", ""))
-            lat = float(r["latitude"])
-            lon = float(r["longitude"])
-            add_item(country, admin, town, lat, lon)
+            add_result_item(country, admin, town, float(r["latitude"]), float(r["longitude"]))
     except Exception:
         pass
 
-    # D. Nominatim 全球中英文備援 (解決多語系混雜)
-    if len(hierarchy) < 2 and "臺灣" not in hierarchy:
+    # 3. OSM Nominatim 補漏 (專解特有譯名如曼谷、芭達雅等)
+    if len(taiwan_results) + len(asia_results) + len(global_results) < 4:
         try:
             osm_url = f"https://nominatim.openstreetmap.org/search?format=json&q={q}&accept-language=zh-TW,zh,en&limit=6&addressdetails=1"
-            headers = {"User-Agent": "SkyCastMasterClean/13.0"}
+            headers = {"User-Agent": "SkyCastRegionPriority/14.0"}
             data = requests.get(osm_url, headers=headers, timeout=3.0).json()
             for top in data:
                 addr = top.get("address", {})
-                country = clean_geo_text(addr.get("country", "全球地區"))
+                country = clean_geo_text(addr.get("country", ""))
                 admin = clean_geo_text(addr.get("state") or addr.get("county") or addr.get("city") or "")
                 town = clean_geo_text(top.get("display_name", "").split(",")[0])
-                lat = float(top["lat"])
-                lon = float(top["lon"])
-                add_item(country, admin, town, lat, lon)
+                add_result_item(country, admin, town, float(top["lat"]), float(top["lon"]))
         except Exception:
             pass
 
-    return hierarchy
+    ordered_groups = {}
+    if taiwan_results:
+        ordered_groups["🇹🇼 臺灣鄉鎮市區"] = taiwan_results
+    if asia_results:
+        ordered_groups["🌏 亞洲地區城市"] = asia_results
+    if global_results:
+        ordered_groups["🌍 全球其他地區"] = global_results
+
+    return ordered_groups
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def reverse_geocode_clean(lat: float, lon: float) -> str:
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1&accept-language=zh-TW,zh"
-    headers = {"User-Agent": "SkyCastMasterClean/13.0"}
+    headers = {"User-Agent": "SkyCastRegionPriority/14.0"}
     try:
         resp = requests.get(url, headers=headers, timeout=3.5)
         if resp.status_code == 200:
@@ -353,7 +316,7 @@ def reverse_geocode_clean(lat: float, lon: float) -> str:
     return "臺中市東勢區"
 
 # -------------------------------------------------------------
-# 6. 氣候與空氣品質 API
+# 5. 氣候與空氣品質 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -419,7 +382,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 7. 生活管家決策引擎
+# 6. 生活管家決策引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
@@ -505,7 +468,7 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 8. 「目前所在地」狀態維護
+# 7. 「我的所在地」狀態持久化
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -532,23 +495,59 @@ if "active_target" not in st.session_state:
         "lon": st.session_state.my_home_location["lon"]
     }
 
-if "selected_country" not in st.session_state:
-    st.session_state.selected_country = None
+# -------------------------------------------------------------
+# 8. 彈出提示視窗 (Dialog / Modal) 核心互動
+# -------------------------------------------------------------
+# 支援現代與相容版本 st.dialog
+dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
+
+@dialog_decorator("🔍 搜尋全球與全台鄉鎮市區")
+def show_search_dialog():
+    st.markdown("請輸入欲查詢的**鄉鎮、市區或城市名稱**（至少 2 個字元）：")
+    kw_input = st.text_input("地名輸入", placeholder="例如：中壢、東勢、豐原、曼谷、澀谷、京都...", label_visibility="collapsed")
+    
+    clean_kw = kw_input.strip()
+    
+    if clean_kw:
+        if len(clean_kw) < 2:
+            st.warning("⚠️ 為了確保搜尋精準，請至少輸入 2 個字元。")
+        else:
+            with st.spinner("正在以【臺灣 ➔ 亞洲 ➔ 全球】順序分析鄉鎮..."):
+                region_groups = search_locations_by_region_order(clean_kw)
+            
+            if region_groups:
+                st.caption(f"找到以下符合「{clean_kw}」的行政區與城市，請點選欲查詢的地點：")
+                
+                # 依序呈現：臺灣 > 亞洲 > 全球
+                for group_title, items in region_groups.items():
+                    st.markdown(f"##### {group_title} ({len(items)})")
+                    cols = st.columns(min(len(items), 2))
+                    for idx, loc in enumerate(items):
+                        with cols[idx % min(len(items), 2)]:
+                            btn_text = f"📍 {loc['display']}"
+                            # 點選後：寫入目標、視窗自動關閉並刷新主頁
+                            if st.button(btn_text, key=f"dlg_{loc['lat']}_{loc['lon']}_{idx}", use_container_width=True):
+                                st.session_state.active_target = {
+                                    "name": f"📍 {loc['display']}",
+                                    "lat": loc["lat"],
+                                    "lon": loc["lon"]
+                                }
+                                st.rerun()
+            else:
+                st.error(f"查無符合「{clean_kw}」的鄉鎮或城市，請確認地名是否正確。")
 
 # -------------------------------------------------------------
-# 9. 頂部搜尋列（強制 2 個字以上限制）
+# 9. 頂部控制看板：點擊開啟提示視窗 + 回到我的位置
 # -------------------------------------------------------------
-c_logo, c_search, c_home = st.columns([1.2, 2.2, 0.9], gap="medium")
+c_logo, c_search_btn, c_home = st.columns([1.2, 2.2, 0.9], gap="medium")
 
 with c_logo:
     st.markdown("### 🌤️ SkyCast 全球天氣")
 
-with c_search:
-    search_input = st.text_input(
-        "全球與全台鄉鎮搜尋",
-        placeholder="請輸入至少 2 個字（例：中壢、曼谷、東勢、日本、巴黎...）",
-        label_visibility="collapsed"
-    )
+with c_search_btn:
+    # 點擊即彈出提示視窗
+    if st.button("🔍 點擊搜尋全球鄉鎮 / 城市（依 臺灣 ➔ 亞洲 ➔ 全球 選擇）...", use_container_width=True):
+        show_search_dialog()
 
 with c_home:
     if st.button("📍 回到我的位置", use_container_width=True, help="點擊立刻回到目前所在地"):
@@ -557,68 +556,10 @@ with c_home:
             "lat": st.session_state.my_home_location["lat"],
             "lon": st.session_state.my_home_location["lon"]
         }
-        st.session_state.selected_country = None
         st.rerun()
 
 # -------------------------------------------------------------
-# 10. 搜尋階層渲染（輸入限制與簡繁自動合併）
-# -------------------------------------------------------------
-search_kw = search_input.strip()
-
-if search_kw:
-    if len(search_kw) < 2:
-        st.info("💡 請至少輸入 2 個字元以進行精確定位查詢（例如：中壢、曼谷、東京）。")
-    else:
-        hierarchy_data = search_hierarchical_locations(search_kw)
-        
-        if hierarchy_data:
-            st.markdown(f"""
-            <div class="hierarchy-box">
-                <strong>🔍 搜尋「{search_kw}」的階層定位指引：</strong>
-            </div>
-            """, unsafe_allow_html=True)
-
-            countries = list(hierarchy_data.keys())
-
-            # 若只有單一國家直接鎖定，多國則列出乾淨去重後的按鈕
-            if len(countries) == 1:
-                active_country = countries[0]
-            else:
-                st.markdown("##### 步驟 1：請選擇目標國家")
-                c_cols = st.columns(min(len(countries), 4))
-                for i, c_name in enumerate(countries):
-                    with c_cols[i % min(len(countries), 4)]:
-                        total_towns = sum(len(towns) for towns in hierarchy_data[c_name].values())
-                        btn_label = f"🌍 {c_name} ({total_towns})"
-                        if st.button(btn_label, key=f"btn_c_{c_name}", use_container_width=True):
-                            st.session_state.selected_country = c_name
-                active_country = st.session_state.selected_country or countries[0]
-
-            # 步驟 2：選擇該國家下的鄉鎮
-            if active_country in hierarchy_data:
-                st.markdown(f"##### 步驟 2：選擇【{active_country}】的城市與鄉鎮地點")
-                admins = hierarchy_data[active_country]
-
-                for admin_name, towns_list in admins.items():
-                    st.caption(f"📁 **{admin_name}** ({len(towns_list)} 個地點)")
-                    t_cols = st.columns(min(len(towns_list), 4))
-                    for j, item in enumerate(towns_list):
-                        with t_cols[j % min(len(towns_list), 4)]:
-                            if st.button(f"📍 {item['town']}", key=f"t_{active_country}_{admin_name}_{j}_{item['lat']}", use_container_width=True):
-                                # 組合乾淨不重複的地名
-                                full_loc_name = format_clean_location_name(active_country, admin_name, item['town'])
-                                st.session_state.active_target = {
-                                    "name": f"📍 {full_loc_name}",
-                                    "lat": item["lat"],
-                                    "lon": item["lon"]
-                                }
-                                st.session_state.selected_country = None
-                                st.rerun()
-        else:
-            st.caption(f"查無包含「{search_kw}」的相符地點，請確認名稱是否正確。")
-
-# -------------------------------------------------------------
-# 11. 氣象資料獲取與畫面呈現
+# 10. 觀測地點與天氣資料呈現 (主畫面)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = st.session_state.active_target["lat"]
