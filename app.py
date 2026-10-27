@@ -47,7 +47,7 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* 預報微型卡片 */
+    /* 逐時預報卡片 */
     .mini-card {
         background: #ffffff;
         border: 1px solid #eef2f6;
@@ -61,6 +61,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
+    /* 一週預報卡片 */
     .daily-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -75,26 +76,27 @@ st.markdown("""
 # -------------------------------------------------------------
 # 2. 狀態管理
 # -------------------------------------------------------------
-DEFAULT_LOCATIONS = {
-    "臺北市信義區": {"lat": 25.0330, "lon": 121.5654},
-    "臺中市西區": {"lat": 24.1477, "lon": 120.6736},
-    "高雄市苓雅區": {"lat": 22.6273, "lon": 120.3014},
-    "花蓮縣花蓮市": {"lat": 23.9872, "lon": 121.6016}
+DEFAULT_PRESETS = {
+    "臺北信義": {"lat": 25.0330, "lon": 121.5654},
+    "臺中西區": {"lat": 24.1477, "lon": 120.6736},
+    "高雄苓雅": {"lat": 22.6273, "lon": 120.3014},
+    "花蓮市區": {"lat": 23.9872, "lon": 121.6016}
 }
 
-if "locations" not in st.session_state:
-    st.session_state.locations = DEFAULT_LOCATIONS.copy()
+if "saved_locations" not in st.session_state:
+    st.session_state.saved_locations = DEFAULT_PRESETS.copy()
 
-if "selected_location_key" not in st.session_state:
-    st.session_state.selected_location_key = None
+if "active_target" not in st.session_state:
+    st.session_state.active_target = {"name": "目前所在地", "lat": 24.1477, "lon": 120.6736}
 
 # -------------------------------------------------------------
-# 3. 地理工具
+# 3. 智慧地理定位與模糊搜尋（絕無經緯度數字干擾）
 # -------------------------------------------------------------
 @st.cache_data(ttl=86400, show_spinner=False)
-def reverse_geocode_safe(lat: float, lon: float) -> str:
+def reverse_geocode_clean(lat: float, lon: float) -> str:
+    """純淨反查中文地名，失敗時僅回傳『目前所在地』"""
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1"
-    headers = {"User-Agent": "SkyCastAssistant/3.2"}
+    headers = {"User-Agent": "SkyCastAssistant/4.0"}
     try:
         resp = requests.get(url, headers=headers, timeout=3.5)
         if resp.status_code == 200:
@@ -106,28 +108,65 @@ def reverse_geocode_safe(lat: float, lon: float) -> str:
                 return name
     except Exception:
         pass
-    return f"目前座標 ({lat:.2f}, {lon:.2f})"
+    return "目前所在地"
 
 @st.cache_data(ttl=86400, show_spinner=False)
-def search_coords_safe(query: str):
-    if not query or len(query.strip()) == 0:
+def smart_search_taiwan(query: str):
+    """
+    多層次智慧地名搜尋：
+    精準支援「豐原」、「豐原區」、「臺中市豐原區」、「台中市東勢區」、「清境農場」等任意輸入
+    """
+    clean_q = query.strip()
+    if not clean_q:
         return None, None, None
-    url = f"https://nominatim.openstreetmap.org/search?format=json&q={query}&countrycodes=tw&limit=1"
-    headers = {"User-Agent": "SkyCastAssistant/3.2"}
-    try:
-        resp = requests.get(url, headers=headers, timeout=4.0)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data:
-                top = data[0]
-                name = top.get("display_name", "").split(",")[0]
-                return float(top["lat"]), float(top["lon"]), name
-    except Exception:
-        pass
+
+    # 1. 產生關鍵字變體（自動相容「臺/台」，並拆解縣市前綴）
+    variants = [clean_q]
+    norm_q = clean_q.replace("台", "臺")
+    if norm_q not in variants:
+        variants.append(norm_q)
+
+    # 拆解如「臺中市東勢區」->「東勢區」
+    for sep in ["市", "縣"]:
+        if sep in norm_q:
+            sub = norm_q.split(sep)[-1]
+            if sub and sub not in variants:
+                variants.append(sub)
+
+    # 2. 第一優先：Open-Meteo Geocoding（對台灣鄉鎮市區支援度最高且極快）
+    for v in variants:
+        try:
+            url = f"https://geocoding-api.open-meteo.com/v1/search?name={v}&count=5&language=zh&format=json"
+            res = requests.get(url, timeout=3.0).json()
+            results = res.get("results", [])
+            for r in results:
+                if r.get("country_code") == "TW":
+                    name = r.get("name")
+                    admin = r.get("admin1", "")
+                    title = f"{admin}{name}" if admin and admin not in name else name
+                    return float(r["latitude"]), float(r["longitude"]), title
+        except Exception:
+            pass
+
+    # 3. 第二優先：OSM Nominatim（針對景點、著名地標）
+    headers = {"User-Agent": "SkyCastAssistant/4.0"}
+    for v in variants:
+        try:
+            osm_url = f"https://nominatim.openstreetmap.org/search?format=json&q={v}&countrycodes=tw&limit=1"
+            resp = requests.get(osm_url, headers=headers, timeout=3.5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data:
+                    top = data[0]
+                    name = top.get("display_name", "").split(",")[0]
+                    return float(top["lat"]), float(top["lon"]), name
+        except Exception:
+            pass
+
     return None, None, None
 
 # -------------------------------------------------------------
-# 4. 氣候與空氣品質 API
+# 4. 氣候、紫外線與空氣品質 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -151,15 +190,15 @@ def resolve_weather(code: int):
 
 def parse_uv_level(uv_val: float):
     if uv_val < 3:
-        return "微量", "#10b981", "安全，日常活動不需特別防護。"
+        return "微量", "安全，日常活動不需特別防護。"
     elif 3 <= uv_val < 6:
-        return "中量", "#f59e0b", "外出建議帽子、薄防曬保護。"
+        return "中量", "外出建議配戴帽子或薄防曬保護。"
     elif 6 <= uv_val < 8:
-        return "高量", "#f97316", "紫外線偏強，曝曬 30 分鐘內易受傷，請擦防曬。"
+        return "高量", "紫外線偏強，曝曬 30 分鐘內易受傷，請擦防曬。"
     elif 8 <= uv_val < 11:
-        return "過量", "#ef4444", "危險邊緣！請避開正午曝曬，備妥抗 UV 陽傘。"
+        return "過量", "外出極易曬傷！請避開正午曝曬，備妥抗 UV 陽傘。"
     else:
-        return "危險", "#7c3aed", "極端強烈！盡量待在室內陰涼處。"
+        return "危險", "極端強烈！盡量避免在無遮蔽處久待。"
 
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_weather_and_aqi(lat: float, lon: float):
@@ -196,7 +235,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
 # 5. 生活管家智慧推論引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
-    uv_status, _, uv_tip = parse_uv_level(uv_val)
+    uv_status, uv_tip = parse_uv_level(uv_val)
 
     if rain_prob >= 60:
         intro_text = f"今日水氣偏多，出門一定要留意雨勢！目前體感約 {feels_like}°C，外出隨身必帶折傘，路面濕滑開車騎車請放慢車速。"
@@ -279,84 +318,117 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, wash_car, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 6. 整合式導航與地點搜尋控制列（無任何分頁）
+# 6. 極度直覺的常駐搜尋列與地點切換
 # -------------------------------------------------------------
 geo = get_geolocation()
-active_locations = {}
-gps_key = None
+my_gps_name = None
 
+# 若成功獲取 GPS，反查純淨中文地名
 if geo and "coords" in geo:
-    user_lat = geo["coords"]["latitude"]
-    user_lon = geo["coords"]["longitude"]
-    loc_title = reverse_geocode_safe(user_lat, user_lon)
-    gps_key = f"📍 目前所在地（{loc_title}）"
-    active_locations[gps_key] = {"lat": user_lat, "lon": user_lon}
+    u_lat = geo["coords"]["latitude"]
+    u_lon = geo["coords"]["longitude"]
+    loc_clean = reverse_geocode_clean(u_lat, u_lon)
+    my_gps_name = f"📍 目前所在地（{loc_clean}）"
+    # 若第一次進入，預設選取目前真實位置
+    if st.session_state.active_target["name"] == "目前所在地":
+        st.session_state.active_target = {"name": my_gps_name, "lat": u_lat, "lon": u_lon}
 
-# 加入自訂地點清單
-active_locations.update(st.session_state.locations)
+# 組合下拉選單清單
+quick_list = {}
+if my_gps_name:
+    quick_list[my_gps_name] = {"lat": geo["coords"]["latitude"], "lon": geo["coords"]["longitude"]}
+quick_list.update(st.session_state.saved_locations)
 
-CUSTOM_ACTION_KEY = "➕ 自訂 / 搜尋新地點..."
-selection_options = list(active_locations.keys()) + [CUSTOM_ACTION_KEY]
+# 頂部控制看板：直覺搜尋 + 快捷切換
+col_logo, col_search_bar, col_switch_bar = st.columns([1.2, 1.8, 1.3], gap="medium")
 
-# 決定選單的預設值
-if st.session_state.selected_location_key not in selection_options:
-    st.session_state.selected_location_key = selection_options[0]
+with col_logo:
+    st.markdown("### 🌤️ SkyCast 天氣管家")
 
-header_left, header_right = st.columns([1.2, 2.8])
-with header_left:
-    st.markdown("### 🌤️ SkyCast 天氣生活管家")
-
-with header_right:
-    # 支援選取與刪除按鈕並排
-    col_sel, col_del = st.columns([4, 1])
-    with col_sel:
-        current_choice = st.selectbox(
-            "切換或搜尋地點",
-            options=selection_options,
-            index=selection_options.index(st.session_state.selected_location_key),
+with col_search_bar:
+    s_col_input, s_col_btn = st.columns([3.5, 1])
+    with s_col_input:
+        user_input_query = st.text_input(
+            "地名搜尋",
+            placeholder="搜尋鄉鎮或景點（如：豐原、東勢、阿里山...）",
             label_visibility="collapsed"
         )
-        st.session_state.selected_location_key = current_choice
+    with s_col_btn:
+        search_clicked = st.button("🔍 查詢", use_container_width=True)
 
-    with col_del:
-        # 如果是使用者自訂儲存的地點，提供一鍵刪除
-        if current_choice in st.session_state.locations and current_choice not in DEFAULT_LOCATIONS:
-            if st.button("🗑️ 刪除", use_container_width=True, help="從儲存清單中移除此地點"):
-                del st.session_state.locations[current_choice]
-                st.session_state.selected_location_key = selection_options[0]
-                st.rerun()
+with col_switch_bar:
+    # 快捷切換下拉選單
+    available_keys = list(quick_list.keys())
+    # 確保當前選中的名稱在選項內
+    curr_name = st.session_state.active_target["name"]
+    selected_idx = available_keys.index(curr_name) if curr_name in available_keys else 0
 
-# 若使用者選擇「自訂 / 搜尋新地點」，在正下方展開輕量輸入列
-if current_choice == CUSTOM_ACTION_KEY:
-    with st.container():
-        st.info("💡 請輸入要查詢的地點名稱（如：清境農場、板橋車站、駁二藝術特區），查詢後將自動加入清單並儲存。")
-        in_col1, in_col2 = st.columns([4, 1])
-        with in_col1:
-            new_place_input = st.text_input("地點搜尋", placeholder="輸入地標或地址...", label_visibility="collapsed")
-        with in_col2:
-            search_btn = st.button("儲存並查詢", use_container_width=True)
+    chosen_preset = st.selectbox(
+        "快速切換地點",
+        options=available_keys,
+        index=selected_idx,
+        label_visibility="collapsed"
+    )
+    if chosen_preset != curr_name and not search_clicked:
+        st.session_state.active_target = {
+            "name": chosen_preset,
+            "lat": quick_list[chosen_preset]["lat"],
+            "lon": quick_list[chosen_preset]["lon"]
+        }
+        st.rerun()
 
-        if search_btn and new_place_input:
-            with st.spinner("定位搜尋中..."):
-                found_lat, found_lon, formal_name = search_coords_safe(new_place_input)
-                if found_lat and found_lon:
-                    save_name = f"⭐ {new_place_input}"
-                    st.session_state.locations[save_name] = {"lat": found_lat, "lon": found_lon}
-                    st.session_state.selected_location_key = save_name
-                    st.success(f"已儲存「{new_place_input}」！")
-                    time.sleep(0.4)
-                    st.rerun()
-                else:
-                    st.error("找不到該地點，請輸入更具體或知名的地標名稱。")
-    st.stop()  # 停止下方天氣渲染，等待使用者輸入完成
+# 執行多層搜尋邏輯
+if search_clicked and user_input_query:
+    with st.spinner("智慧定位搜尋中..."):
+        f_lat, f_lon, f_title = smart_search_taiwan(user_input_query)
+        if f_lat and f_lon:
+            st.session_state.active_target = {
+                "name": f"🔎 {f_title}",
+                "lat": f_lat,
+                "lon": f_lon
+            }
+            st.rerun()
+        else:
+            st.error(f"找不到「{user_input_query}」，請嘗試輸入鄉鎮名（例：豐原、東勢區）或主要地標。")
 
 # -------------------------------------------------------------
-# 7. 氣象資料獲取與畫面呈現
+# 7. 當前地點操作列（⭐ 收藏此地 / 🗑️ 移除收藏）
 # -------------------------------------------------------------
-target_coords = active_locations[current_choice]
-target_lat, target_lon = target_coords["lat"], target_coords["lon"]
+active_name = st.session_state.active_target["name"]
+active_lat = st.session_state.active_target["lat"]
+active_lon = st.session_state.active_target["lon"]
 
-weather_data, aqi_data = fetch_weather_and_aqi(target_lat, target_lon)
+# 收藏操作小工具
+col_cur_title, col_actions = st.columns([3, 1])
+with col_cur_title:
+    st.markdown(f"**目前查看地點：** `{active_name}`")
+
+with col_actions:
+    # 如果是搜尋出來的地點，且未在收藏清單中，提供一鍵收藏
+    clean_key_name = active_name.replace("🔎 ", "").replace("⭐ ", "")
+    is_saved = clean_key_name in st.session_state.saved_locations
+
+    if not is_saved and "目前所在地" not in active_name:
+        if st.button("⭐ 收藏此地點", use_container_width=True):
+            st.session_state.saved_locations[clean_key_name] = {"lat": active_lat, "lon": active_lon}
+            st.session_state.active_target["name"] = clean_key_name
+            st.success(f"已收藏「{clean_key_name}」！")
+            time.sleep(0.3)
+            st.rerun()
+    elif is_saved and clean_key_name not in DEFAULT_PRESETS:
+        if st.button("🗑️ 移除收藏", use_container_width=True):
+            del st.session_state.saved_locations[clean_key_name]
+            st.session_state.active_target = {
+                "name": available_keys[0],
+                "lat": quick_list[available_keys[0]]["lat"],
+                "lon": quick_list[available_keys[0]]["lon"]
+            }
+            st.rerun()
+
+# -------------------------------------------------------------
+# 8. 氣象資料獲取與畫面呈現
+# -------------------------------------------------------------
+weather_data, aqi_data = fetch_weather_and_aqi(active_lat, active_lon)
 
 current = weather_data.get("current", {})
 hourly = weather_data.get("hourly", {})
@@ -395,7 +467,7 @@ elif cur_temp <= 18:
 else:
     hero_bg = "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)"
 
-# 生活管家叮嚀語
+# 生活管家前導叮嚀語
 intro, w_head, w_desc, d_head, d_desc, sport_tip, car_tip, pack_list, uv_status_str = get_comprehensive_assistant_advice(
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
@@ -410,10 +482,10 @@ left_col, right_col = st.columns([1.1, 1.2], gap="large")
 
 with left_col:
     st.markdown("##### 🗺️ 觀測座標位置")
-    map_instance = folium.Map(location=[target_lat, target_lon], zoom_start=13, tiles="OpenStreetMap")
+    map_instance = folium.Map(location=[active_lat, active_lon], zoom_start=13, tiles="OpenStreetMap")
     folium.Marker(
-        [target_lat, target_lon],
-        tooltip=f"{current_choice} · {cur_temp}°C",
+        [active_lat, active_lon],
+        tooltip=f"{active_name} · {cur_temp}°C",
         icon=folium.Icon(color="blue", icon="cloud")
     ).add_to(map_instance)
     st_folium(map_instance, width=None, height=330, returned_objects=[])
