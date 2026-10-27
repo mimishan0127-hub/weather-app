@@ -28,7 +28,7 @@ st.markdown("""
     
     /* 核心氣候英雄卡 */
     .weather-hero-card {
-        padding: 24px;
+        padding: 22px 24px;
         border-radius: 16px;
         color: white;
         margin-bottom: 14px;
@@ -69,32 +69,6 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
-
-    /* 警示橫幅 */
-    .alert-banner {
-        padding: 12px 18px;
-        border-radius: 12px;
-        margin-bottom: 14px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .alert-danger { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-    .alert-warning { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-
-    /* 地點管理卡片 */
-    .location-item-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 12px 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -111,13 +85,16 @@ DEFAULT_LOCATIONS = {
 if "locations" not in st.session_state:
     st.session_state.locations = DEFAULT_LOCATIONS.copy()
 
+if "selected_location_key" not in st.session_state:
+    st.session_state.selected_location_key = None
+
 # -------------------------------------------------------------
 # 3. 地理工具
 # -------------------------------------------------------------
 @st.cache_data(ttl=86400, show_spinner=False)
 def reverse_geocode_safe(lat: float, lon: float) -> str:
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1"
-    headers = {"User-Agent": "SkyCastAssistant/3.1"}
+    headers = {"User-Agent": "SkyCastAssistant/3.2"}
     try:
         resp = requests.get(url, headers=headers, timeout=3.5)
         if resp.status_code == 200:
@@ -136,7 +113,7 @@ def search_coords_safe(query: str):
     if not query or len(query.strip()) == 0:
         return None, None, None
     url = f"https://nominatim.openstreetmap.org/search?format=json&q={query}&countrycodes=tw&limit=1"
-    headers = {"User-Agent": "SkyCastAssistant/3.1"}
+    headers = {"User-Agent": "SkyCastAssistant/3.2"}
     try:
         resp = requests.get(url, headers=headers, timeout=4.0)
         if resp.status_code == 200:
@@ -150,7 +127,7 @@ def search_coords_safe(query: str):
     return None, None, None
 
 # -------------------------------------------------------------
-# 4. 氣候、紫外線與空氣品質 API
+# 4. 氣候與空氣品質 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -173,7 +150,6 @@ def resolve_weather(code: int):
     return WEATHER_SPECS.get(code, ("🌤️", "多雲"))
 
 def parse_uv_level(uv_val: float):
-    """紫外線分級標準"""
     if uv_val < 3:
         return "微量", "#10b981", "安全，日常活動不需特別防護。"
     elif 3 <= uv_val < 6:
@@ -187,7 +163,6 @@ def parse_uv_level(uv_val: float):
 
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_weather_and_aqi(lat: float, lon: float):
-    # 增加 current=uv_index 與 daily=uv_index_max
     weather_url = (
         f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
         f"&current=temperature_2m,relative_humidity_2m,weather_code,apparent_temperature,precipitation,wind_speed_10m,uv_index"
@@ -218,12 +193,11 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 5. 生活管家智慧推論引擎（整合紫外線）
+# 5. 生活管家智慧推論引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, _, uv_tip = parse_uv_level(uv_val)
 
-    # 1. 小幫手今日總評
     if rain_prob >= 60:
         intro_text = f"今日水氣偏多，出門一定要留意雨勢！目前體感約 {feels_like}°C，外出隨身必帶折傘，路面濕滑開車騎車請放慢車速。"
     elif uv_val >= 8:
@@ -235,7 +209,6 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     else:
         intro_text = f"今天整體氣候舒適宜人（體感 {feels_like}°C），紫外線屬{uv_status}等級，非常適合外出踏青散心或安排戶外活動。"
 
-    # 2. 細緻穿搭指南
     if temp >= 28:
         wear_headline = "涼感排汗短袖 ＋ 輕薄防曬遮陽"
         wear_desc = f"""
@@ -258,7 +231,6 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         * **配件保護**：若騎車外出，手套、防風圍巾與包覆性口罩能顯著降低體感寒意。
         """
 
-    # 3. 曬衣防霉攻略
     if rain_prob < 30 and humidity < 75:
         dry_headline = "五星推薦：通風良好，戶外速乾！"
         dry_desc = f"""
@@ -279,7 +251,6 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         * **收衣時間**：建議於傍晚 5 點前收納入室，避免日落後地表濕氣返潮。
         """
 
-    # 4. 運動與生活
     if rain_prob >= 50:
         sport_status = "路面濕滑易有雨，建議室內重訓、瑜伽或伸展運動。"
         wash_car = "不建議洗車（易受降雨或泥水污染）。"
@@ -290,7 +261,6 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         sport_status = "天候舒適，適合戶外慢跑、健走或單車騎乘。"
         wash_car = "適宜洗車打蠟，車身可維持多日乾淨光亮。"
 
-    # 5. 隨身出門清單
     pack_items = []
     if rain_prob >= 40:
         pack_items.append("🌂 折疊雨傘 / 輕便雨衣")
@@ -309,10 +279,11 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, wash_car, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 6. 主程式資料獲取
+# 6. 整合式導航與地點搜尋控制列（無任何分頁）
 # -------------------------------------------------------------
 geo = get_geolocation()
 active_locations = {}
+gps_key = None
 
 if geo and "coords" in geo:
     user_lat = geo["coords"]["latitude"]
@@ -321,24 +292,70 @@ if geo and "coords" in geo:
     gps_key = f"📍 目前所在地（{loc_title}）"
     active_locations[gps_key] = {"lat": user_lat, "lon": user_lon}
 
+# 加入自訂地點清單
 active_locations.update(st.session_state.locations)
 
-header_col1, header_col2 = st.columns([1.5, 2.5])
-with header_col1:
-    st.markdown("### 🌤️ 即時天氣與生活管家")
+CUSTOM_ACTION_KEY = "➕ 自訂 / 搜尋新地點..."
+selection_options = list(active_locations.keys()) + [CUSTOM_ACTION_KEY]
 
-with header_col2:
-    selected_loc_name = st.selectbox(
-        "切換地點",
-        options=list(active_locations.keys()),
-        index=0,
-        label_visibility="collapsed"
-    )
+# 決定選單的預設值
+if st.session_state.selected_location_key not in selection_options:
+    st.session_state.selected_location_key = selection_options[0]
 
-target_coords = active_locations[selected_loc_name]
+header_left, header_right = st.columns([1.2, 2.8])
+with header_left:
+    st.markdown("### 🌤️ SkyCast 天氣生活管家")
+
+with header_right:
+    # 支援選取與刪除按鈕並排
+    col_sel, col_del = st.columns([4, 1])
+    with col_sel:
+        current_choice = st.selectbox(
+            "切換或搜尋地點",
+            options=selection_options,
+            index=selection_options.index(st.session_state.selected_location_key),
+            label_visibility="collapsed"
+        )
+        st.session_state.selected_location_key = current_choice
+
+    with col_del:
+        # 如果是使用者自訂儲存的地點，提供一鍵刪除
+        if current_choice in st.session_state.locations and current_choice not in DEFAULT_LOCATIONS:
+            if st.button("🗑️ 刪除", use_container_width=True, help="從儲存清單中移除此地點"):
+                del st.session_state.locations[current_choice]
+                st.session_state.selected_location_key = selection_options[0]
+                st.rerun()
+
+# 若使用者選擇「自訂 / 搜尋新地點」，在正下方展開輕量輸入列
+if current_choice == CUSTOM_ACTION_KEY:
+    with st.container():
+        st.info("💡 請輸入要查詢的地點名稱（如：清境農場、板橋車站、駁二藝術特區），查詢後將自動加入清單並儲存。")
+        in_col1, in_col2 = st.columns([4, 1])
+        with in_col1:
+            new_place_input = st.text_input("地點搜尋", placeholder="輸入地標或地址...", label_visibility="collapsed")
+        with in_col2:
+            search_btn = st.button("儲存並查詢", use_container_width=True)
+
+        if search_btn and new_place_input:
+            with st.spinner("定位搜尋中..."):
+                found_lat, found_lon, formal_name = search_coords_safe(new_place_input)
+                if found_lat and found_lon:
+                    save_name = f"⭐ {new_place_input}"
+                    st.session_state.locations[save_name] = {"lat": found_lat, "lon": found_lon}
+                    st.session_state.selected_location_key = save_name
+                    st.success(f"已儲存「{new_place_input}」！")
+                    time.sleep(0.4)
+                    st.rerun()
+                else:
+                    st.error("找不到該地點，請輸入更具體或知名的地標名稱。")
+    st.stop()  # 停止下方天氣渲染，等待使用者輸入完成
+
+# -------------------------------------------------------------
+# 7. 氣象資料獲取與畫面呈現
+# -------------------------------------------------------------
+target_coords = active_locations[current_choice]
 target_lat, target_lon = target_coords["lat"], target_coords["lon"]
 
-# 呼叫 API
 weather_data, aqi_data = fetch_weather_and_aqi(target_lat, target_lon)
 
 current = weather_data.get("current", {})
@@ -371,7 +388,6 @@ aqi_current = aqi_data.get("current", {})
 aqi_val = int(aqi_current.get("us_aqi", 35)) if aqi_current.get("us_aqi") is not None else 35
 pm25_val = aqi_current.get("pm2_5", 8.5)
 
-# 背景情境色
 if cur_temp >= 28:
     hero_bg = "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)"
 elif cur_temp <= 18:
@@ -379,190 +395,109 @@ elif cur_temp <= 18:
 else:
     hero_bg = "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)"
 
-# -------------------------------------------------------------
-# 7. 畫面渲染
-# -------------------------------------------------------------
-tab_main, tab_manage = st.tabs(["📊 天氣看板與生活指引", "📍 關注地點管理"])
+# 生活管家叮嚀語
+intro, w_head, w_desc, d_head, d_desc, sport_tip, car_tip, pack_list, uv_status_str = get_comprehensive_assistant_advice(
+    cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
+)
 
-with tab_main:
-    # 生活管家推論
-    intro, w_head, w_desc, d_head, d_desc, sport_tip, car_tip, pack_list, uv_status_str = get_comprehensive_assistant_advice(
-        cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
-    )
+st.markdown(f"""
+<div class="assistant-intro">
+    🤖 <strong>生活管家叮嚀：</strong>{intro}
+</div>
+""", unsafe_allow_html=True)
+
+left_col, right_col = st.columns([1.1, 1.2], gap="large")
+
+with left_col:
+    st.markdown("##### 🗺️ 觀測座標位置")
+    map_instance = folium.Map(location=[target_lat, target_lon], zoom_start=13, tiles="OpenStreetMap")
+    folium.Marker(
+        [target_lat, target_lon],
+        tooltip=f"{current_choice} · {cur_temp}°C",
+        icon=folium.Icon(color="blue", icon="cloud")
+    ).add_to(map_instance)
+    st_folium(map_instance, width=None, height=330, returned_objects=[])
+
+with right_col:
+    st.markdown("##### ⚡ 即時微氣象與環境指標")
     
     st.markdown(f"""
-    <div class="assistant-intro">
-        🤖 <strong>生活管家叮嚀：</strong>{intro}
-    </div>
-    """, unsafe_allow_html=True)
-
-    left_col, right_col = st.columns([1.1, 1.2], gap="large")
-
-    with left_col:
-        st.markdown("##### 🗺️ 觀測座標位置")
-        map_instance = folium.Map(location=[target_lat, target_lon], zoom_start=13, tiles="OpenStreetMap")
-        folium.Marker(
-            [target_lat, target_lon],
-            tooltip=f"{selected_loc_name} · {cur_temp}°C",
-            icon=folium.Icon(color="blue", icon="cloud")
-        ).add_to(map_instance)
-        st_folium(map_instance, width=None, height=330, returned_objects=[])
-
-    with right_col:
-        st.markdown("##### ⚡ 即時微氣象與環境指標")
-        
-        # 英雄氣象卡片（加入 紫外線 UV 指數顯示）
-        st.markdown(f"""
-        <div class="weather-hero-card" style="background: {hero_bg};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 34px; font-weight: 700; line-height: 1.2;">{icon} {cur_temp}°C</div>
-                    <div style="font-size: 15px; opacity: 0.95; margin-top: 4px;">{condition} ｜ 體感 {cur_feels}°C</div>
-                </div>
-                <div style="text-align: right; font-size: 13px; opacity: 0.95; line-height: 1.7;">
-                    <div>💧 降雨機率 <strong>{cur_rain}%</strong> ｜ 濕度 <strong>{cur_hum}%</strong></div>
-                    <div style="margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.22); display: inline-block;">
-                        ☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) ｜ 🍃 AQI <strong>{aqi_val}</strong>
-                    </div>
+    <div class="weather-hero-card" style="background: {hero_bg};">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 34px; font-weight: 700; line-height: 1.2;">{icon} {cur_temp}°C</div>
+                <div style="font-size: 15px; opacity: 0.95; margin-top: 4px;">{condition} ｜ 體感 {cur_feels}°C</div>
+            </div>
+            <div style="text-align: right; font-size: 13px; opacity: 0.95; line-height: 1.7;">
+                <div>💧 降雨機率 <strong>{cur_rain}%</strong> ｜ 濕度 <strong>{cur_hum}%</strong></div>
+                <div style="margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.22); display: inline-block;">
+                    ☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) ｜ 🍃 AQI <strong>{aqi_val}</strong>
                 </div>
             </div>
         </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=False):
+        st.markdown(w_desc)
+
+    with st.expander(f"🧺 **曬衣防霉攻略**：{d_head}", expanded=False):
+        st.markdown(d_desc)
+
+    col_act1, col_act2 = st.columns(2)
+    col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
+    col_act2.info(f"🚗 **洗車與保養**\n\n{car_tip}")
+
+    st.caption("🎒 **隨身行囊建議**：" + " ｜ ".join(pack_list))
+
+st.markdown("---")
+
+# 未來 6 小時逐時趨勢
+st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
+hour_cols = st.columns(6)
+for i in range(len(times)):
+    h_icon, _ = resolve_weather(codes[i])
+    with hour_cols[i]:
+        st.markdown(f"""
+        <div class="mini-card">
+            <div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>
+            <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>
+            <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>
+        </div>
         """, unsafe_allow_html=True)
 
-        # 展開式詳細生活指南
-        with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=False):
-            st.markdown(w_desc)
+st.write("")
+chart_data = pd.DataFrame({
+    "時間": times,
+    "氣溫 (°C)": temps,
+    "降雨機率 (%)": rains
+}).set_index("時間")
+st.line_chart(chart_data, height=180)
 
-        with st.expander(f"🧺 **曬衣防霉攻略**：{d_head}", expanded=False):
-            st.markdown(d_desc)
+st.markdown("---")
 
-        # 運動與洗車生活卡片
-        col_act1, col_act2 = st.columns(2)
-        col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
-        col_act2.info(f"🚗 **洗車與保養**\n\n{car_tip}")
-
-        # 出門包包清單
-        st.caption("🎒 **隨身行囊建議**：" + " ｜ ".join(pack_list))
-
-    st.markdown("---")
-    
-    # 逐時預報
-    st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
-    hour_cols = st.columns(6)
-    for i in range(len(times)):
-        h_icon, _ = resolve_weather(codes[i])
-        with hour_cols[i]:
+# 未來一週 (7天) 展望
+st.markdown("##### 📅 未來一週天氣展望")
+if daily_dates:
+    day_cols = st.columns(len(daily_dates))
+    for d_idx, d_date_str in enumerate(daily_dates):
+        d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
+        d_weekday = weekdays_zh[d_obj.weekday()]
+        d_title = "今天" if d_idx == 0 else f"{d_obj.month}/{d_obj.day} ({d_weekday})"
+        d_icon, d_cond = resolve_weather(daily_codes[d_idx])
+        t_max, t_min = daily_max_t[d_idx], daily_min_t[d_idx]
+        r_max = daily_rain_p[d_idx] if daily_rain_p else 0
+        u_max = daily_uv_max[d_idx] if daily_uv_max else 0.0
+        
+        with day_cols[d_idx]:
             st.markdown(f"""
-            <div class="mini-card">
-                <div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>
-                <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
-                <div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>
-                <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>
+            <div class="daily-card">
+                <div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>
+                <div style="font-size: 28px; margin: 6px 0;">{d_icon}</div>
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>
+                <div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>
+                <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
             </div>
             """, unsafe_allow_html=True)
-
-    st.write("")
-    chart_data = pd.DataFrame({
-        "時間": times,
-        "氣溫 (°C)": temps,
-        "降雨機率 (%)": rains
-    }).set_index("時間")
-    st.line_chart(chart_data, height=180)
-
-    st.markdown("---")
-
-    # 一週預報（加入每日 UV 指數）
-    st.markdown("##### 📅 未來一週天氣展望")
-    if daily_dates:
-        day_cols = st.columns(len(daily_dates))
-        for d_idx, d_date_str in enumerate(daily_dates):
-            d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
-            d_weekday = weekdays_zh[d_obj.weekday()]
-            d_title = "今天" if d_idx == 0 else f"{d_obj.month}/{d_obj.day} ({d_weekday})"
-            d_icon, d_cond = resolve_weather(daily_codes[d_idx])
-            t_max, t_min = daily_max_t[d_idx], daily_min_t[d_idx]
-            r_max = daily_rain_p[d_idx] if daily_rain_p else 0
-            u_max = daily_uv_max[d_idx] if daily_uv_max else 0.0
-            
-            with day_cols[d_idx]:
-                st.markdown(f"""
-                <div class="daily-card">
-                    <div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>
-                    <div style="font-size: 28px; margin: 6px 0;">{d_icon}</div>
-                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>
-                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>
-                    <div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>
-                    <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# 8. 直覺式地點管理
-# -------------------------------------------------------------
-with tab_manage:
-    st.markdown("#### 📍 自訂關注地點管理")
-    st.caption("新增常去的城市、工作地或露營旅遊景點，隨時切換掌握當地微氣候。")
-
-    st.markdown("##### ⚡ 常用熱門捷徑（點擊直接新增）")
-    preset_shortcuts = {
-        "🏕️ 清境農場": [24.0475, 121.1558],
-        "🌊 淡水漁人碼頭": [25.1822, 121.4116],
-        "🚄 左營高鐵站": [22.6872, 120.3075],
-        "⛰️ 阿里山風景區": [23.5113, 120.8037],
-        "🏮 九份老街": [25.1098, 121.8452]
-    }
-    
-    sc_cols = st.columns(len(preset_shortcuts))
-    for idx, (p_name, p_coords) in enumerate(preset_shortcuts.items()):
-        with sc_cols[idx]:
-            if st.button(p_name, use_container_width=True):
-                st.session_state.locations[p_name] = {"lat": p_coords[0], "lon": p_coords[1]}
-                st.success(f"已收錄：{p_name}")
-                time.sleep(0.3)
-                st.rerun()
-
-    st.markdown("---")
-
-    st.markdown("##### 🔍 搜尋台灣地標或鄉鎮")
-    col_search, col_add_btn = st.columns([3.5, 1])
-    with col_search:
-        search_query = st.text_input(
-            "輸入想新增的地標名稱",
-            placeholder="例如：板橋火車站、駁二藝術特區、竹科管理局、羅東夜市...",
-            label_visibility="collapsed"
-        )
-    with col_add_btn:
-        do_search = st.button("➕ 新增至清單", use_container_width=True)
-
-    if do_search and search_query:
-        with st.spinner("搜尋地理資訊中..."):
-            s_lat, s_lon, formal_name = search_coords_safe(search_query)
-            if s_lat and s_lon:
-                st.session_state.locations[search_query] = {"lat": s_lat, "lon": s_lon}
-                st.success(f"✅ 成功加入「{search_query}」！")
-                time.sleep(0.4)
-                st.rerun()
-            else:
-                st.error("找不到該地點，請輸入更具體或知名的地標名稱。")
-
-    st.markdown("---")
-
-    st.markdown("##### 📋 目前已關注的地點清單")
-    if not st.session_state.locations:
-        st.info("目前清單為空，請從上方搜尋或點擊熱門捷徑新增。")
-    else:
-        for loc_key, loc_val in list(st.session_state.locations.items()):
-            c_box1, c_box2 = st.columns([4, 1])
-            with c_box1:
-                st.markdown(f"""
-                <div class="location-item-box">
-                    <div>
-                        <strong style="font-size: 15px; color: #1e293b;">📍 {loc_key}</strong>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">座標：{loc_val['lat']:.3f}, {loc_val['lon']:.3f}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            with c_box2:
-                if st.button("🗑️ 移除", key=f"del_{loc_key}", use_container_width=True):
-                    del st.session_state.locations[loc_key]
-                    st.rerun()
