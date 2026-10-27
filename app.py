@@ -66,149 +66,84 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 全台灣鄉鎮 + 全球熱門大都市本機速查庫 (0 毫秒即時響應)
+# 2. 全球即時地理定位引擎 (Live Universal Geocoding)
 # -------------------------------------------------------------
-PRELOAD_CITIES = {
-    # --- 亞洲熱門城市 ---
-    "曼谷": (13.7563, 100.5018, "泰國 曼谷 (Bangkok)"),
-    "bangkok": (13.7563, 100.5018, "泰國 曼谷 (Bangkok)"),
-    "清邁": (18.7883, 98.9853, "泰國 清邁 (Chiang Mai)"),
-    "普吉島": (7.8804, 98.3923, "泰國 普吉島 (Phuket)"),
-    "芭達雅": (12.9276, 100.8771, "泰國 芭達雅 (Pattaya)"),
-    "東京": (35.6762, 139.6503, "日本 東京 (Tokyo)"),
-    "tokyo": (35.6762, 139.6503, "日本 東京 (Tokyo)"),
-    "大阪": (34.6937, 135.5023, "日本 大阪 (Osaka)"),
-    "osaka": (34.6937, 135.5023, "日本 大阪 (Osaka)"),
-    "京都": (35.0116, 135.7681, "日本 京都 (Kyoto)"),
-    "kyoto": (35.0116, 135.7681, "日本 京都 (Kyoto)"),
-    "沖繩": (26.2124, 127.6809, "日本 沖繩那霸 (Okinawa)"),
-    "福岡": (33.5904, 130.4017, "日本 福岡 (Fukuoka)"),
-    "札幌": (43.0618, 141.3545, "日本 札幌 (Sapporo)"),
-    "名古屋": (35.1815, 136.9066, "日本 名古屋 (Nagoya)"),
-    "首爾": (37.5665, 126.9780, "韓國 首爾 (Seoul)"),
-    "seoul": (37.5665, 126.9780, "韓國 首爾 (Seoul)"),
-    "釜山": (35.1796, 129.0756, "韓國 釜山 (Busan)"),
-    "濟州島": (33.4996, 126.5312, "韓國 濟州島 (Jeju)"),
-    "新加坡": (1.3521, 103.8198, "新加坡 (Singapore)"),
-    "singapore": (1.3521, 103.8198, "新加坡 (Singapore)"),
-    "吉隆坡": (3.1390, 101.6869, "馬來西亞 吉隆坡 (Kuala Lumpur)"),
-    "檳城": (5.4141, 100.3288, "馬來西亞 檳城 (Penang)"),
-    "胡志明市": (10.8231, 106.6297, "越南 胡志明市 (Ho Chi Minh)"),
-    "河內": (21.0285, 105.8542, "越南 河內 (Hanoi)"),
-    "峴港": (16.0544, 108.2022, "越南 峴港 (Da Nang)"),
-    "峇里島": (-8.3405, 115.0920, "印尼 峇里島 (Bali)"),
-    "香港": (22.3193, 114.1694, "香港 (Hong Kong)"),
-    "澳門": (22.1987, 113.5439, "澳門 (Macau)"),
-    # --- 歐美澳大洋洲 ---
-    "倫敦": (51.5074, -0.1278, "英國 倫敦 (London)"),
-    "london": (51.5074, -0.1278, "英國 倫敦 (London)"),
-    "巴黎": (48.8566, 2.3522, "法國 巴黎 (Paris)"),
-    "paris": (48.8566, 2.3522, "法國 巴黎 (Paris)"),
-    "紐約": (40.7128, -74.0060, "美國 紐約 (New York)"),
-    "new york": (40.7128, -74.0060, "美國 紐約 (New York)"),
-    "洛杉磯": (34.0522, -118.2437, "美國 洛杉磯 (Los Angeles)"),
-    "舊金山": (37.7749, -122.4194, "美國 舊金山 (San Francisco)"),
-    "西雅圖": (47.6062, -122.3321, "美國 西雅圖 (Seattle)"),
-    "溫哥華": (49.2827, -123.1207, "加拿大 溫哥華 (Vancouver)"),
-    "雪梨": (-33.8688, 151.2093, "澳洲 雪梨 (Sydney)"),
-    "sydney": (-33.8688, 151.2093, "澳洲 雪梨 (Sydney)"),
-    "墨爾本": (-37.8136, 144.9631, "澳洲 墨爾本 (Melbourne)"),
-    "羅馬": (41.9028, 12.4964, "義大利 羅馬 (Rome)"),
-    "柏林": (52.5200, 13.4050, "德國 柏林 (Berlin)"),
-    "阿姆斯特丹": (52.3676, 4.9041, "荷蘭 阿姆斯特丹 (Amsterdam)"),
-    "杜拜": (25.2048, 55.2708, "阿聯 杜拜 (Dubai)"),
-    # --- 臺灣各精準鄉鎮區 ---
-    "豐原區": (24.2549, 120.7226, "臺中市豐原區"),
-    "東勢區": (24.2586, 120.8283, "臺中市東勢區"),
-    "西屯區": (24.1815, 120.6171, "臺中市西屯區"),
-    "北屯區": (24.1822, 120.7041, "臺中市北屯區"),
-    "南屯區": (24.1384, 120.6405, "臺中市南屯區"),
-    "西區": (24.1477, 120.6736, "臺中市西區"),
-    "北區": (24.1610, 120.6825, "臺中市北區"),
-    "中區": (24.1422, 120.6800, "臺中市中區"),
-    "東區": (24.1353, 120.6974, "臺中市東區"),
-    "南區": (24.1198, 120.6635, "臺中市南區"),
-    "竹北市": (24.8387, 121.0177, "新竹縣竹北市"),
-    "竹東鎮": (24.7335, 121.0885, "新竹縣竹東鎮"),
-    "信義區": (25.0330, 121.5654, "臺北市信義區"),
-    "大安區": (25.0264, 121.5435, "臺北市大安區"),
-    "板橋區": (25.0125, 121.4657, "新北市板橋區"),
-    "中和區": (24.9996, 121.5002, "新北市中和區"),
-    "新莊區": (25.0360, 121.4444, "新北市新莊區"),
-    "桃園區": (24.9936, 121.3010, "桃園市桃園區"),
-    "中壢區": (24.9537, 121.2257, "桃園市中壢區"),
-    "苓雅區": (22.6273, 120.3014, "高雄市苓雅區"),
-    "左營區": (22.6902, 120.2945, "高雄市左營區"),
-    "三民區": (22.6438, 120.3005, "高雄市三民區"),
-    "安平區": (22.9972, 120.1685, "臺南市安平區"),
-    "新營區": (23.3103, 120.3162, "臺南市新營區"),
-    "花蓮市": (23.9872, 121.6016, "花蓮縣花蓮市"),
-    "宜蘭市": (24.7570, 121.7530, "宜蘭縣宜蘭市"),
-    "臺東市": (22.7583, 121.1444, "臺東縣臺東市"),
-    "屏東市": (22.6762, 120.4879, "屏東縣屏東市"),
-    "彰化市": (24.0816, 120.5385, "彰化縣彰化市"),
-    "南投市": (23.9099, 120.6845, "南投縣南投市")
-}
-
-# -------------------------------------------------------------
-# 3. 三重智慧搜尋引擎 (本地庫 + OSM Nominatim + Open-Meteo)
-# -------------------------------------------------------------
-def search_location_efficient(query: str):
-    """高效全能搜尋：支援全台 368 鄉鎮、全球主要城市及中英地名"""
-    q = query.strip()
-    if not q:
+@st.cache_data(ttl=86400, show_spinner=False)
+def live_global_geocoding(query: str):
+    """
+    即時定位搜尋引擎：
+    使用者輸入任何地名（曼谷、Bangkok、豐原、臺中市東勢區、Tokyo、巴黎、倫敦...），
+    當下向國際地理數據庫解析出中心經緯度與中文地名。
+    """
+    clean_q = query.strip()
+    if not clean_q:
         return None, None, None
 
-    lower_q = q.lower()
-    norm_q = q.replace("台", "臺")
-
-    # --- 第一重：本地秒查庫 (0 毫秒直接命中) ---
-    for key, (lat, lon, full_name) in PRELOAD_CITIES.items():
-        if key == lower_q or key in norm_q or norm_q in key:
-            return lat, lon, full_name
-
-    for suffix in ["區", "市", "鎮", "鄉"]:
-        cand = norm_q + suffix
-        if cand in PRELOAD_CITIES:
-            lat, lon, full_name = PRELOAD_CITIES[cand]
-            return lat, lon, full_name
-
-    # --- 第二重：OSM Nominatim 全球多語系搜尋 (專解「曼谷」、「芭達雅」等中文名) ---
-    headers = {"User-Agent": "SkyCastGlobalWeather/8.0"}
+    # 第一順位：OpenStreetMap Nominatim 全球多語系解析（支援全世界任意鄉鎮中英文）
+    headers = {
+        "User-Agent": "SkyCastUniversalApp/9.5 (https://skycast-weather.streamlit.app; contact@skycast.internal)"
+    }
     try:
-        osm_url = f"https://nominatim.openstreetmap.org/search?format=json&q={q}&accept-language=zh-TW,zh,en&limit=1"
-        resp = requests.get(osm_url, headers=headers, timeout=3.5)
-        if resp.status_code == 200:
-            data = resp.json()
+        osm_url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            "q": clean_q,
+            "format": "json",
+            "limit": 1,
+            "accept-language": "zh-TW,zh,en",
+            "addressdetails": 1
+        }
+        res = requests.get(osm_url, params=params, headers=headers, timeout=4.5)
+        if res.status_code == 200:
+            data = res.json()
             if data:
                 top = data[0]
-                name = top.get("display_name", "").split(",")[0]
-                return float(top["lat"]), float(top["lon"]), name
+                addr = top.get("address", {})
+                country = addr.get("country", "")
+                city = addr.get("city") or addr.get("county") or addr.get("state") or ""
+                district = addr.get("suburb") or addr.get("district") or addr.get("town") or addr.get("village") or ""
+                
+                # 組織乾淨好讀的地名標題
+                if country in ["臺灣", "Taiwan", "台湾"]:
+                    display_name = f"{city}{district}".strip()
+                    if not display_name:
+                        display_name = top.get("display_name", "").split(",")[0]
+                else:
+                    place_main = top.get("display_name", "").split(",")[0]
+                    display_name = f"{country} {place_main}".strip() if country else place_main
+
+                return float(top["lat"]), float(top["lon"]), display_name
     except Exception:
         pass
 
-    # --- 第三重：Open-Meteo Geocoding 多語言備援 ---
+    # 第二順位：Open-Meteo Geocoding 全球地理備援
     try:
-        om_url = f"https://geocoding-api.open-meteo.com/v1/search?name={q}&count=5&language=zh&format=json"
-        res = requests.get(om_url, timeout=3.5).json()
+        om_url = "https://geocoding-api.open-meteo.com/v1/search"
+        params = {"name": clean_q, "count": 3, "format": "json", "language": "zh"}
+        res = requests.get(om_url, params=params, timeout=3.5).json()
         results = res.get("results", [])
         if results:
             top = results[0]
             name = top.get("name", "")
-            admin1 = top.get("admin1", "")
+            admin = top.get("admin1", "")
             country = top.get("country", "")
-            display = f"{country} {admin1} {name}".strip() if country else name
-            return float(top["latitude"]), float(top["longitude"]), display
+            display_name = f"{country} {admin} {name}".strip() if country else f"{admin} {name}".strip()
+            return float(top["latitude"]), float(top["longitude"]), display_name
     except Exception:
         pass
+
+    # 第三順位：針對台灣特定帶有「縣市」長詞做自動去前綴二度比對
+    for prefix in ["臺中市", "台中市", "臺北市", "台北市", "新北市", "桃園市", "臺南市", "台南市", "高雄市", "新竹縣", "新竹市"]:
+        if clean_q.startswith(prefix) and len(clean_q) > len(prefix):
+            sub_q = clean_q[len(prefix):]
+            return live_global_geocoding(sub_q)
 
     return None, None, None
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def reverse_geocode_global(lat: float, lon: float) -> str:
-    """經緯度安全反查純淨地名（絕無經緯度數字干擾）"""
+    """經緯度安全反查純淨地名（國內外通用，不顯示經緯度數字）"""
     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1&accept-language=zh-TW,zh"
-    headers = {"User-Agent": "SkyCastGlobalWeather/8.0"}
+    headers = {"User-Agent": "SkyCastUniversalApp/9.5"}
     try:
         resp = requests.get(url, headers=headers, timeout=3.5)
         if resp.status_code == 200:
@@ -217,7 +152,7 @@ def reverse_geocode_global(lat: float, lon: float) -> str:
             city = addr.get("city") or addr.get("county") or addr.get("state") or ""
             district = addr.get("suburb") or addr.get("district") or addr.get("town") or addr.get("village") or ""
             
-            if country in ["臺灣", "台湾"]:
+            if country in ["臺灣", "Taiwan", "台湾"]:
                 name = f"{city}{district}".strip()
             else:
                 name = f"{country} {city} {district}".strip()
@@ -226,10 +161,23 @@ def reverse_geocode_global(lat: float, lon: float) -> str:
                 return name
     except Exception:
         pass
-    return "臺南市新營區"
+    return "臺中市東勢區"
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_ip_fallback():
+    """GPS 就緒前的自然備援定位"""
+    try:
+        res = requests.get("https://ipapi.co/json/", timeout=3.0).json()
+        city = res.get("city", "東勢區")
+        region = res.get("region", "臺中市")
+        lat = float(res.get("latitude", 24.2586))
+        lon = float(res.get("longitude", 120.8283))
+        return lat, lon, f"{region}{city}".strip()
+    except Exception:
+        return 24.2586, 120.8283, "臺中市東勢區"
 
 # -------------------------------------------------------------
-# 4. 氣候與空氣品質 API (自動適用當地時區)
+# 3. 氣候與空氣品質 API (自動判讀各國當地時區)
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -295,7 +243,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 5. 生活管家決策引擎
+# 4. 生活管家決策引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
@@ -354,10 +302,10 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         """
 
     if rain_prob >= 50:
-        commute_tip = "路面潮濕易打滑，騎車行經標線與水溝蓋請減速；建議攜帶防水雨具。"
+        commute_tip = "路面潮濕易打滑，行經金屬標線與水溝蓋請減速；建議攜帶防水雨具。"
         sport_status = "戶外濕滑易雨，建議改至室內健身、瑜伽或伸展運動。"
     elif wind_speed > 20:
-        commute_tip = "陣風強勁，高架橋或空曠路段騎車開車請握緊龍頭/方向盤並加大安全車距。"
+        commute_tip = "陣風強勁，行經高架橋或空曠路段請注意車身穩定並保持安全車距。"
         sport_status = "風力偏大，不適宜羽球等球類運動，戶外慢跑請留意風阻。"
     else:
         commute_tip = "天候晴朗乾燥，視線良好，各類通勤出行均非常順暢安全。"
@@ -381,119 +329,82 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 6. 狀態管理與導航搜尋控制列
+# 5. 狀態持久化管理與真實 GPS 綁定
 # -------------------------------------------------------------
-if "active_target" not in st.session_state:
-    st.session_state.active_target = {"name": "📍 目前所在地：臺南市新營區", "lat": 23.3103, "lon": 120.3162}
-
-if "saved_locations" not in st.session_state:
-    st.session_state.saved_locations = {
-        "泰國曼谷": {"lat": 13.7563, "lon": 100.5018},
-        "日本東京": {"lat": 35.6895, "lon": 139.6917},
-        "臺北市信義區": {"lat": 25.0330, "lon": 121.5654},
-        "臺中市西區": {"lat": 24.1477, "lon": 120.6736}
+# A. 初始化設備真實位置
+if "my_real_location" not in st.session_state:
+    ip_lat, ip_lon, ip_name = get_ip_fallback()
+    st.session_state.my_real_location = {
+        "name": f"📍 目前所在地：{ip_name}",
+        "lat": ip_lat,
+        "lon": ip_lon
     }
 
 # 抓取設備真實 GPS
 geo = get_geolocation()
-if geo and "coords" in geo and not st.session_state.get("user_has_switched", False):
+if geo and "coords" in geo:
     u_lat = geo["coords"]["latitude"]
     u_lon = geo["coords"]["longitude"]
     loc_clean = reverse_geocode_global(u_lat, u_lon)
-    st.session_state.active_target = {
+    st.session_state.my_real_location = {
         "name": f"📍 目前所在地：{loc_clean}",
         "lat": u_lat,
         "lon": u_lon
     }
 
-# 頂部導航列排版
-c_logo, c_search, c_select = st.columns([1.2, 1.8, 1.3], gap="medium")
+# B. 初始化當前觀測視窗（若尚未指定，預設對齊真實位置）
+if "active_target" not in st.session_state:
+    st.session_state.active_target = st.session_state.my_real_location.copy()
 
-with c_logo:
-    st.markdown("### 🌤️ SkyCast 天氣管家")
+# -------------------------------------------------------------
+# 6. 頂部控制看板：即時全球搜尋 +「回到目前位置」獨立快捷鈕
+# -------------------------------------------------------------
+col_logo, col_search_bar, col_btn_home = st.columns([1.1, 2.2, 0.9], gap="medium")
 
-# 透過 Form 強化按鍵即時響應
-with c_search:
+with col_logo:
+    st.markdown("### 🌤️ SkyCast 全球天氣")
+
+# 全球即時搜尋表單
+with col_search_bar:
     with st.form("search_bar_form", border=False):
-        s_in, s_btn = st.columns([3.5, 1])
+        s_in, s_btn = st.columns([3.8, 1])
         with s_in:
             search_input = st.text_input(
-                "全台與全球地名搜尋",
-                placeholder="輸入國內外地名（例：曼谷、東京、豐原區、London...）",
+                "全球地名搜尋",
+                placeholder="輸入國內外地名（例：曼谷、Bangkok、豐原、Paris、東京...）",
                 label_visibility="collapsed"
             )
         with s_btn:
             submit_search = st.form_submit_button("🔍 查詢", use_container_width=True)
 
-# 搜尋執行邏輯
+# 獨立「回到目前位置」按鈕（點擊即刻重置回真實所在地）
+with col_btn_home:
+    if st.button("📍 我的位置", use_container_width=True, help="點擊立刻回到目前所在地"):
+        st.session_state.active_target = st.session_state.my_real_location.copy()
+        st.rerun()
+
+# 搜尋執行觸發（輸入即時定位）
 if submit_search and search_input:
-    with st.spinner(f"正在定位「{search_input}」..."):
-        f_lat, f_lon, f_name = search_location_efficient(search_input)
+    with st.spinner(f"正在全網定位「{search_input}」..."):
+        f_lat, f_lon, f_name = live_global_geocoding(search_input)
         if f_lat and f_lon:
             st.session_state.active_target = {
                 "name": f"📍 {f_name}",
                 "lat": f_lat,
                 "lon": f_lon
             }
-            st.session_state.user_has_switched = True
             st.rerun()
         else:
-            st.error(f"找不到「{search_input}」，請確認名稱是否正確。")
-
-# 快速下拉選單
-cur_target_name = st.session_state.active_target["name"]
-quick_options = [cur_target_name]
-for s_name in st.session_state.saved_locations.keys():
-    if s_name not in quick_options:
-        quick_options.append(s_name)
-
-with c_select:
-    def on_dropdown_select():
-        chosen = st.session_state["dropdown_key"]
-        if chosen in st.session_state.saved_locations:
-            item = st.session_state.saved_locations[chosen]
-            st.session_state.active_target = {
-                "name": f"📍 {chosen}",
-                "lat": item["lat"],
-                "lon": item["lon"]
-            }
-            st.session_state.user_has_switched = True
-
-    st.selectbox(
-        "快速切換地點",
-        options=quick_options,
-        index=0,
-        key="dropdown_key",
-        on_change=on_dropdown_select,
-        label_visibility="collapsed"
-    )
+            st.error(f"找不到「{search_input}」，請確認名稱或改用英文（例如 Bangkok, Tokyo）。")
 
 # -------------------------------------------------------------
-# 7. 當前地點操作列（⭐ 收藏此地 / 🗑️ 移除收藏）
+# 7. 顯示當前觀測點資訊
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = st.session_state.active_target["lat"]
 active_lon = st.session_state.active_target["lon"]
 
-col_cur_title, col_actions = st.columns([3, 1])
-with col_cur_title:
-    st.markdown(f"**目前觀測地點：** `{active_name}`")
-
-with col_actions:
-    clean_key = active_name.replace("📍 ", "")
-    is_saved = clean_key in st.session_state.saved_locations
-
-    if not is_saved and "目前所在地" not in active_name:
-        if st.button("⭐ 收藏此地點", use_container_width=True):
-            st.session_state.saved_locations[clean_key] = {"lat": active_lat, "lon": active_lon}
-            st.success(f"已收藏「{clean_key}」！")
-            time.sleep(0.3)
-            st.rerun()
-    elif is_saved:
-        if st.button("🗑️ 移除收藏", use_container_width=True):
-            del st.session_state.saved_locations[clean_key]
-            st.session_state.user_has_switched = False
-            st.rerun()
+st.markdown(f"**目前觀測地點：** `{active_name}`")
 
 # -------------------------------------------------------------
 # 8. 氣候資料獲取與畫面呈現
