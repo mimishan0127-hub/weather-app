@@ -177,8 +177,7 @@ coords = TAIWAN_CITIES[selected_city]
 with col_map:
     st.markdown(f"#### 📍 {selected_city} 區域標示")
     # 建立簡約地圖 (CartoDB positron 淺色底圖)
-    m = folium.Map(location=[coords["lat"], coords["lon"]], zoom_start=11, tiles="CartoDB positron")
-    folium.Marker(
+m = folium.Map(location=[lat, lon], zoom_start=10, tiles="OpenStreetMap")    folium.Marker(
         [coords["lat"], coords["lon"]],
         popup=f"{selected_city}",
         tooltip=f"{selected_city}: {current_temp}°C",
