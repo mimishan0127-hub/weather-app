@@ -36,15 +36,19 @@ st.markdown("""
         margin-bottom: 14px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
     }
-    .assistant-intro {
+    .assistant-intro-box {
         background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
         border-left: 4px solid #0284c7;
-        padding: 12px 16px;
-        border-radius: 8px;
+        padding: 12px 18px;
+        border-radius: 10px;
         margin-bottom: 14px;
         color: #0f172a;
         font-size: 14px;
-        line-height: 1.5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
     }
     .mini-card {
         background: #ffffff;
@@ -72,6 +76,16 @@ st.markdown("""
         border-radius: 10px;
         padding: 16px;
         margin-top: 10px;
+    }
+    .status-badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 16px;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -243,7 +257,7 @@ TAIWAN_COMPLETE_DATA = {
 }
 
 # -------------------------------------------------------------
-# 3. 內建 6 大洲備援庫
+# 3. 內建 6 大洲全球備援庫
 # -------------------------------------------------------------
 BUILTIN_WORLD_FALLBACK = {
     "亞洲 (Asia)": {
@@ -366,12 +380,10 @@ BUILTIN_WORLD_FALLBACK = {
 }
 
 # -------------------------------------------------------------
-# 4. 原生免套件解構引擎 (Zero-Dependency XLSX Parser)
+# 4. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
 # -------------------------------------------------------------
 def parse_xlsx_without_packages(filename):
-    """使用 Python 標準庫 zipfile 與 xml 模組直接讀取 .xlsx，完全免安裝 openpyxl"""
     with zipfile.ZipFile(filename, 'r') as z:
-        # 1. 解析共用字串表 (Shared Strings)
         shared_strings = []
         if 'xl/sharedStrings.xml' in z.namelist():
             tree = ET.fromstring(z.read('xl/sharedStrings.xml'))
@@ -379,7 +391,6 @@ def parse_xlsx_without_packages(filename):
                 texts = [t.text for t in si.iter('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t') if t.text]
                 shared_strings.append("".join(texts))
         
-        # 2. 解析工作表 1
         sheet_xml = z.read('xl/worksheets/sheet1.xml')
         tree = ET.fromstring(sheet_xml)
         
@@ -401,7 +412,6 @@ def parse_xlsx_without_packages(filename):
             continue
         continent, country, city_zh, city_en, lat_str, lon_str = row[0], row[1], row[2], row[3], row[4], row[5]
         
-        # 修復少數空白國家（納米比亞城市）
         if city_en in ['Windhoek', 'Rundu', 'Walvis Bay', 'Swakopmund']:
             continent = '非洲 (Africa)'
             country = '納米比亞 / Namibia'
@@ -429,10 +439,6 @@ def parse_xlsx_without_packages(filename):
 
 @st.cache_data(show_spinner=False)
 def load_world_cities_hierarchy():
-    """
-    智慧多源載入世界城市資料庫：
-    快取 JSON ➔ 原生免套件解構 XLSX ➔ CSV ➔ 內建 6 大洲備援
-    """
     possible_names = [
         "world_cities.json",
         "world_cities_over_50k_zh_en_no_taiwan.xlsx",
@@ -457,31 +463,29 @@ def load_world_cities_hierarchy():
         if found_path:
             break
 
-    # 1. 優先從 JSON 快取秒開 (0.02秒)
+    # 1. 優先從快取 JSON 秒開
     if found_path and found_path.endswith(".json"):
         try:
             with open(found_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data, f"已由快取檔案載入：{os.path.basename(found_path)}（共 6 大洲、186 國、12,000+ 城市）"
+                return json.load(f)
         except Exception:
             pass
 
-    # 2. 原生免套件解析 XLSX
+    # 2. 原生免套件解構 XLSX
     if found_path and found_path.endswith(".xlsx"):
         try:
             hierarchy = parse_xlsx_without_packages(found_path)
-            # 自動儲存 JSON 快取供下次秒開
             try:
                 cache_out = os.path.join(os.path.dirname(found_path), "world_cities.json")
                 with open(cache_out, "w", encoding="utf-8") as f:
                     json.dump(hierarchy, f, ensure_ascii=False)
             except Exception:
                 pass
-            return hierarchy, f"已原生直接解析：{os.path.basename(found_path)}（共 6 大洲、186 國、12,357 城市）"
+            return hierarchy
         except Exception:
             pass
 
-    # 3. CSV 備用解析
+    # 3. CSV 備用
     if found_path and found_path.endswith(".csv"):
         try:
             df = pd.read_csv(found_path)
@@ -500,12 +504,11 @@ def load_world_cities_hierarchy():
                 if country not in hierarchy[continent]:
                     hierarchy[continent][country] = {}
                 hierarchy[continent][country][city_label] = [lat, lon]
-            return hierarchy, f"已解析 CSV 檔案：{os.path.basename(found_path)}（共 6 大洲、186 國、12,357 城市）"
+            return hierarchy
         except Exception:
             pass
 
-    # 4. 查無檔案時返回豐富的內建 6 大洲備援庫
-    return BUILTIN_WORLD_FALLBACK, "使用內建精選 6 大洲全球城市庫（確認 Excel 在同目錄即可全數解鎖 12,357 城市）"
+    return BUILTIN_WORLD_FALLBACK
 
 # -------------------------------------------------------------
 # 5. 氣候與空氣品質 API
@@ -687,17 +690,17 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 階梯式點選提示視窗 (含完整 6 大洲與 12,357 城市)
+# 8. 階梯式點選提示視窗 (已移除資料庫提示)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
-@dialog_decorator("🧭 選擇觀測地區（階梯式點選篩選）")
+@dialog_decorator("🧭 選擇觀測地區")
 def show_cascading_selector_dialog():
     st.markdown("請選擇您要查詢的區域體系：")
     
     scope_choice = st.radio(
         "區域範圍",
-        options=["🇹🇼 臺灣 (全台 22 縣市 368 鄉鎮)", "🌍 全球 (186 國、12,000+ 城市)"],
+        options=["🇹🇼 臺灣", "🌍 全球"],
         horizontal=True,
         label_visibility="collapsed"
     )
@@ -730,14 +733,12 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
     else:
-        # 全球數據 (自動載入 6 大洲 186 國 12,357 城市)
-        world_hierarchy, status_msg = load_world_cities_hierarchy()
+        world_hierarchy = load_world_cities_hierarchy()
         
         st.markdown('<div class="selector-box">', unsafe_allow_html=True)
         st.markdown("##### 🌍 全球大洲、國家與世界城市點選")
-        st.caption(f"ℹ️ **資料庫狀態**：{status_msg}")
         
-        # 第二層：各大洲 (保證 6 大洲完整列出)
+        # 第二層：各大洲
         continents = list(world_hierarchy.keys())
         default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
         selected_continent = st.selectbox("1. 選擇大洲", options=continents, index=default_cont_idx)
@@ -753,7 +754,7 @@ def show_cascading_selector_dialog():
                 break
         selected_country = st.selectbox("2. 選擇國家", options=country_list, index=default_c_idx if country_list else None)
         
-        # 第四層：該國家所有城市 (支援中英名稱與鍵盤即時輸入篩選)
+        # 第四層：該國家所有城市
         cities_dict = countries_dict.get(selected_country, {}) if selected_country else {}
         city_list = list(cities_dict.keys())
         
@@ -781,15 +782,15 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 9. 頂部導航控制列 (點擊開啟彈出視窗)
+# 9. 頂部導航控制列 (簡潔按鈕)
 # -------------------------------------------------------------
-c_logo, c_selector_btn, c_home = st.columns([1.1, 2.3, 0.9], gap="medium")
+c_logo, c_selector_btn, c_home = st.columns([1.2, 1.8, 1.0], gap="medium")
 
 with c_logo:
     st.markdown("### 🌤️ SkyCast 全球天氣")
 
 with c_selector_btn:
-    if st.button("🧭 點擊篩選地點（臺灣 368 鄉鎮 ｜ 全球 12,000+ 城市）...", use_container_width=True):
+    if st.button("🧭 選擇地點", use_container_width=True):
         show_cascading_selector_dialog()
 
 with c_home:
@@ -802,7 +803,7 @@ with c_home:
         st.rerun()
 
 # -------------------------------------------------------------
-# 10. 觀測地點與天氣資料呈現 (主畫面)
+# 10. 天氣資料獲取與運算
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = st.session_state.active_target["lat"]
@@ -853,27 +854,69 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_list, uv_sta
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
 
+# -------------------------------------------------------------
+# 11. 4 大警示指標動態顏色運算
+# -------------------------------------------------------------
+# 1. 降雨警示
+if cur_rain >= 60:
+    rain_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">💧 降雨 {cur_rain}% (警戒)</span>'
+elif cur_rain >= 30:
+    rain_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">💧 降雨 {cur_rain}% (注意)</span>'
+else:
+    rain_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">💧 降雨 {cur_rain}% (良好)</span>'
+
+# 2. 紫外線警示
+if cur_uv >= 8:
+    uv_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">☀️ 紫外線 {cur_uv:.1f} (過量危險)</span>'
+elif cur_uv >= 6:
+    uv_badge = f'<span class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">☀️ 紫外線 {cur_uv:.1f} (高量)</span>'
+elif cur_uv >= 3:
+    uv_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">☀️ 紫外線 {cur_uv:.1f} (中量)</span>'
+else:
+    uv_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">☀️ 紫外線 {cur_uv:.1f} (微量)</span>'
+
+# 3. 空汙警示
+if aqi_val >= 150:
+    aqi_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🍃 空污 AQI {aqi_val} (有害)</span>'
+elif aqi_val >= 101:
+    aqi_badge = f'<span class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">🍃 空污 AQI {aqi_val} (敏感橘警)</span>'
+elif aqi_val >= 51:
+    aqi_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🍃 空污 AQI {aqi_val} (普通)</span>'
+else:
+    aqi_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🍃 空污 AQI {aqi_val} (良好)</span>'
+
+# 4. 溫度警示
+if cur_temp >= 33:
+    temp_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🌡️ 溫度 {cur_temp}°C (酷熱警戒)</span>'
+elif cur_temp <= 15:
+    temp_badge = f'<span class="status-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">🌡️ 溫度 {cur_temp}°C (低溫防寒)</span>'
+elif cur_temp >= 29:
+    temp_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🌡️ 溫度 {cur_temp}°C (偏熱)</span>'
+else:
+    temp_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</span>'
+
+# 帶有右側頁面提示指標的生活管家橫幅
 st.markdown(f"""
-<div class="assistant-intro">
-    🤖 <strong>生活管家叮嚀：</strong>{intro}
+<div class="assistant-intro-box">
+    <div style="flex: 1; min-width: 300px;">
+        🤖 <strong>生活管家叮嚀：</strong>{intro}
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        {temp_badge}
+        {rain_badge}
+        {uv_badge}
+        {aqi_badge}
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-left_col, right_col = st.columns([1.1, 1.2], gap="large")
+# -------------------------------------------------------------
+# 12. 即時氣象與生活決策大看板
+# -------------------------------------------------------------
+col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
-with left_col:
-    st.markdown(f"##### 🗺️ 觀測座標中心位置")
-    map_instance = folium.Map(location=[active_lat, active_lon], zoom_start=13, tiles="OpenStreetMap")
-    folium.Marker(
-        [active_lat, active_lon],
-        tooltip=f"{active_name} · {cur_temp}°C",
-        icon=folium.Icon(color="blue", icon="cloud")
-    ).add_to(map_instance)
-    st_folium(map_instance, width=None, height=330, returned_objects=[])
-
-with right_col:
-    st.markdown("##### ⚡ 即時微氣象與環境指標")
-    
+with col_weather:
+    st.markdown("##### ⚡ 即時微氣象與環境狀態")
     st.markdown(f"""
     <div class="weather-hero-card" style="background: {hero_bg};">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -891,21 +934,25 @@ with right_col:
     </div>
     """, unsafe_allow_html=True)
 
-    with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=False):
+    col_act1, col_act2 = st.columns(2)
+    col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
+    col_act2.info(f"🛵 **通勤與出行指引**\n\n{commute_tip}")
+
+with col_tips:
+    st.markdown("##### 💡 生活小幫手決策指南")
+    with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=True):
         st.markdown(w_desc)
 
     with st.expander(f"🧺 **曬衣防霉攻略**：{d_head}", expanded=False):
         st.markdown(d_desc)
 
-    col_act1, col_act2 = st.columns(2)
-    col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
-    col_act2.info(f"🛵 **通勤與出行指引**\n\n{commute_tip}")
-
     st.caption("🎒 **隨身行囊建議**：" + " ｜ ".join(pack_list))
 
 st.markdown("---")
 
-# 未來 6 小時逐時趨勢
+# -------------------------------------------------------------
+# 13. 未來 6 小時預報趨勢
+# -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 hour_cols = st.columns(6)
 for i in range(len(times)):
@@ -930,7 +977,9 @@ st.line_chart(chart_data, height=180)
 
 st.markdown("---")
 
-# 未來一週 (7天) 展望
+# -------------------------------------------------------------
+# 14. 未來一週 (7天) 展望
+# -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if daily_dates:
     day_cols = st.columns(len(daily_dates))
@@ -954,3 +1003,30 @@ if daily_dates:
                 <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
             </div>
             """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# -------------------------------------------------------------
+# 15. 地圖置底呈現與位置完全固定 (禁止拖曳偏移)
+# -------------------------------------------------------------
+st.markdown(f"##### 🗺️ 觀測座標中心位置")
+
+# 完全鎖定地圖屬性：dragging=False, zoom_control=False, scrollWheelZoom=False, doubleClickZoom=False
+map_instance = folium.Map(
+    location=[active_lat, active_lon],
+    zoom_start=13,
+    tiles="OpenStreetMap",
+    dragging=False,
+    zoom_control=False,
+    scrollWheelZoom=False,
+    doubleClickZoom=False,
+    touchZoom=False
+)
+folium.Marker(
+    [active_lat, active_lon],
+    tooltip=f"{active_name} · {cur_temp}°C",
+    icon=folium.Icon(color="blue", icon="cloud")
+).add_to(map_instance)
+
+# returned_objects=[] 鎖定回傳避免點擊引起頁面重跑刷新
+st_folium(map_instance, width=None, height=360, returned_objects=[])
