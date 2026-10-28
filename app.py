@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與現代質感樣式
+# 1. 頁面全域配置與現代極簡樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -32,12 +32,31 @@ st.markdown("""
     }
     @media (max-width: 768px) {
         .block-container {
-            padding-top: 1rem !important;
+            padding-top: 0.8rem !important;
             padding-bottom: 2rem !important;
-            padding-left: 0.85rem !important;
-            padding-right: 0.85rem !important;
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
         }
     }
+
+    /* 頂部地名膠囊按鈕樣式 */
+    div[data-testid="column"] button {
+        border-radius: 20px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
+        color: #334155 !important;
+        font-weight: 500 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="column"] button:hover {
+        border-color: #0284c7 !important;
+        color: #0284c7 !important;
+        background-color: #f0f9ff !important;
+        transform: translateY(-1px);
+    }
+
+    /* 核心氣象大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 18px;
@@ -51,27 +70,31 @@ st.markdown("""
             padding: 18px 16px;
         }
     }
+
+    /* 精簡通知與警示指標容器 */
     .assistant-intro-box {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-left: 5px solid #0284c7;
-        padding: 14px 18px;
+        padding: 10px 16px;
         border-radius: 14px;
         margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
     }
     @media (max-width: 768px) {
         .assistant-intro-box {
             flex-direction: column;
             align-items: flex-start;
-            padding: 12px 14px;
+            padding: 10px 12px;
         }
     }
+
+    /* 警示徽章標籤 */
     .badge-wrapper {
         display: flex;
         gap: 8px;
@@ -81,17 +104,15 @@ st.markdown("""
     .status-badge {
         font-size: 12px;
         font-weight: 600;
-        padding: 5px 12px;
+        padding: 4px 10px;
         border-radius: 20px;
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        transition: transform 0.2s ease;
     }
-    .status-badge:hover {
-        transform: translateY(-1px);
-    }
+
+    /* 橫向滑動卡片流 */
     .weather-scroll-row {
         display: flex;
         gap: 12px;
@@ -107,6 +128,7 @@ st.markdown("""
         background: #cbd5e1;
         border-radius: 6px;
     }
+
     .hourly-scroll-card {
         flex: 0 0 105px;
         background: #ffffff;
@@ -115,11 +137,6 @@ st.markdown("""
         padding: 12px 6px;
         text-align: center;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-        transition: all 0.2s ease;
-    }
-    .hourly-scroll-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
     }
     .daily-scroll-card {
         flex: 0 0 120px;
@@ -129,12 +146,8 @@ st.markdown("""
         padding: 14px 8px;
         text-align: center;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-        transition: all 0.2s ease;
     }
-    .daily-scroll-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
-    }
+
     .map-frame-container {
         border-radius: 16px;
         overflow: hidden;
@@ -148,6 +161,15 @@ st.markdown("""
         border-radius: 12px;
         padding: 16px;
         margin-top: 10px;
+    }
+    .compact-tip-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 9px 12px;
+        margin-bottom: 12px;
+        font-size: 13.5px;
+        color: #334155;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -636,80 +658,78 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 6. 生活管家決策引擎
+# 6. 生活管家決策引擎（提示極致精簡化）
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
 
+    # 簡化為直觀的一句話叮嚀
     if rain_prob >= 60:
-        intro_text = f"今日水氣偏多，出門一定要留意雨勢！目前體感約 {feels_like}°C，外出隨身必帶折傘，路面濕滑開車騎車請放慢車速。"
+        intro_text = f"有雨路滑（體感 {feels_like}°C），出門請隨身攜帶雨具、放慢車速。"
     elif uv_val >= 8:
-        intro_text = f"紫外線達「{uv_status}」等級（UV: {uv_val:.1f}）！外出極易曬傷，請務必擦妥防曬乳、備妥抗 UV 陽傘並多補充水分。"
+        intro_text = f"紫外線偏強（UV {uv_val:.1f}），外出請務必防曬防曬傷並多補充水分。"
     elif temp >= 29:
-        intro_text = f"今天體感偏熱（{feels_like}°C）！水分流失快，外出記得防曬補水，並多待在通風陰涼處。"
+        intro_text = f"體感偏熱（{feels_like}°C），請多喝水預防中暑，待陰涼通風處。"
     elif temp <= 18:
-        intro_text = f"天氣偏涼冷（體感 {feels_like}°C），早晚出門或騎車容易受風寒，請洋蔥式搭配禦寒，多喝溫熱開水暖身。"
+        intro_text = f"天氣偏涼（體感 {feels_like}°C），早晚溫差顯著，出門請搭配洋蔥式保暖。"
     else:
-        intro_text = f"今天整體氣候舒適宜人（體感 {feels_like}°C），紫外線屬{uv_status}等級，非常適合外出踏青散心或安排戶外活動。"
+        intro_text = f"氣候舒適宜人（體感 {feels_like}°C），適宜外出踏青散心或戶外活動。"
 
     if temp >= 28:
         wear_headline = "涼感排汗短袖 ＋ 輕薄防曬遮陽"
         wear_desc = f"""
-        * **白天穿著**：建議著吸濕排汗的透氣短袖或棉麻寬鬆上衣，避免深色吸熱材質。
-        * **紫外線防護**：當前紫外線為 **{uv_status}**（指數 {uv_val:.1f}），{uv_tip}
-        * **冷氣房溫差**：室內外溫差常達 5°C 以上，建議備一件薄開襟衫或輕薄襯衫防頭部與肩頸著涼。
+        * **日間穿著**：著透氣吸汗短袖或棉麻寬鬆上衣。
+        * **紫外線提示**：目前紫外線為 **{uv_status}**（指數 {uv_val:.1f}），{uv_tip}
+        * **溫差應對**：室內外溫差常達 5°C 以上，建議備薄開襟衫防冷氣著涼。
         """
     elif 21 <= temp < 28:
         wear_headline = "舒適短袖 / 襯衫 ＋ 早晚防風薄外套"
         wear_desc = f"""
-        * **日間穿著**：純棉 T-shirt、薄長袖或休閒襯衫，體感剛剛好。
-        * **紫外線提示**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），外出活動請留意適當防曬。
-        * **早晚應對**：早晚日夜溫差約 3～6°C，建議隨身攜帶薄夾克、連帽外套或防風防潑水薄風衣。
+        * **日間穿著**：純棉 T-shirt、薄長袖或休閒襯衫剛剛好。
+        * **紫外線提示**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），請適度防曬。
+        * **早晚應對**：早晚日夜溫差約 3～6°C，建議攜帶薄夾克或風衣。
         """
     else:
         wear_headline = "保暖洋蔥式穿搭 ＋ 厚外套/風衣"
         wear_desc = f"""
-        * **內層親膚**：棉質長袖上衣或輕量發熱衣，鎖住核心溫度。
-        * **外層禦寒**：建議搭配防風外套、羊毛大衣或羽絨背心。
-        * **配件保護**：若騎車或步行外出，手套、防風圍巾能顯著降低體感寒意。
+        * **內層親膚**：棉質長袖或輕量發熱衣鎖住核心體溫。
+        * **外層禦寒**：搭配防風外套、羊毛大衣或羽絨背心。
+        * **防風配件**：步行或騎車配戴防風圍巾降低體感寒意。
         """
 
     if rain_prob < 30 and humidity < 75:
         dry_headline = "五星推薦：通風良好，戶外速乾！"
         dry_desc = f"""
-        * **晾乾速度**：環境濕度僅 {humidity}%，日照充足，薄衣物約 2.5～3 小時即可乾燥。
-        * **家事推薦**：床單、被套、大毛巾與球鞋等難乾大件物品，請把握今日清洗！
-        * **紫外線殺菌**：紫外線強時具良好殺菌效果，但深色或絲質衣物可翻面晾曬防褪色。
+        * **晾乾速度**：環境濕度僅 {humidity}%，通風充足，衣物約 2.5～3 小時即可乾燥。
+        * **推薦清洗**：床單、被套等難乾大件物品請把握今日！
         """
     elif rain_prob >= 50 or humidity >= 80:
         dry_headline = "不建議室外曬衣（建議室內搭配除濕機）"
         dry_desc = f"""
-        * **受潮風險**：降雨機率高達 {rain_prob}%，空氣水氣已飽和，掛在室外容易吸附潮氣、滋生霉菌與悶臭味。
-        * **解決妙招**：改掛於室內通風處，搭配除濕機運轉（設定 50% 濕度）或直接使用烘衣機低溫烘乾。
+        * **受潮風險**：降雨機率高達 {rain_prob}%，空氣濕度飽和，室外晾掛易吸附潮氣。
+        * **解決方式**：改掛於室內通風處，搭配除濕機或低溫烘乾。
         """
     else:
         dry_headline = "陽台陰乾為佳，留意天氣突變"
         dry_desc = f"""
-        * **曬衣處選擇**：請務必掛在有雨遮的陽台，隨時注意天空雲層變化。
-        * **收衣時間**：建議於傍晚 5 點前收納入室，避免日落後地表濕氣返潮。
+        * **曬衣處選擇**：請掛於有遮棚陽台，並於傍晚日落前收納入室避免返潮。
         """
 
     if rain_prob >= 50:
-        commute_tip = "路面潮濕易打滑，騎車行經金屬標線與水溝蓋請減速；建議攜帶防水雨具。"
-        sport_status = "戶外濕滑易雨，建議改至室內健身、瑜伽或伸展運動。"
+        commute_tip = "路面潮濕易打滑，行經標線水溝蓋請減速；建議攜帶防水雨具。"
+        sport_status = "戶外濕滑易雨，建議改至室內伸展或健身訓練。"
     elif wind_speed > 20:
-        commute_tip = "陣風強勁，行經高架橋或空曠路段請注意車身穩定並保持安全車距。"
-        sport_status = "風力偏大，不適宜羽球等球類運動，戶外慢跑請留意風阻。"
+        commute_tip = "陣風偏大，行經橋樑空曠路段請注意車身穩定與車距。"
+        sport_status = "風力稍大，不宜羽球等球類運動，慢跑請留意風阻。"
     else:
         commute_tip = "天候晴朗乾燥，視線良好，各類通勤出行均非常順暢安全。"
-        sport_status = "天候舒適宜人，非常適合慢跑、騎乘自行車或散步。"
+        sport_status = "氣候舒適，非常適合慢跑、散步或單車騎乘。"
 
     pack_items = []
     if rain_prob >= 40:
-        pack_items.append("🌂 折疊雨傘 / 輕便雨衣")
+        pack_items.append("🌂 折疊雨傘 / 輕便雨具")
     if uv_val >= 6:
-        pack_items.append(f"🧴 防曬乳 (SPF30+) / 抗 UV 傘 (UV: {uv_val:.1f})")
-        pack_items.append("🕶️ 墨鏡 / 遮陽帽")
+        pack_items.append(f"🧴 防曬乳 (SPF30+) / 抗 UV 傘")
     if temp >= 28:
         pack_items.append("💧 環保水瓶（防熱補水）")
     if aqi_val > 90:
@@ -838,19 +858,25 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 9. 頂部簡潔導航控制列
+# 9. 頂部隱藏式導航列（地名即按鈕膠囊化）
 # -------------------------------------------------------------
-c_logo, c_selector_btn, c_home = st.columns([1.2, 1.8, 1.0], gap="medium")
+active_name = st.session_state.active_target["name"]
+active_lat = st.session_state.active_target["lat"]
+active_lon = st.session_state.active_target["lon"]
+
+display_location_text = active_name.replace("📍 ", "").replace("目前所在地：", "")
+
+c_logo, c_capsule_btn, c_home_btn = st.columns([1.4, 2.0, 0.4], gap="small")
 
 with c_logo:
     st.markdown("### 🌤️ SkyCast 全球天氣")
 
-with c_selector_btn:
-    if st.button("🧭 選擇地點", use_container_width=True):
+with c_capsule_btn:
+    if st.button(f"📍 {display_location_text}  ▾", use_container_width=True, help="點擊切換地點"):
         show_cascading_selector_dialog()
 
-with c_home:
-    if st.button("📍 回到我的位置", use_container_width=True, help="點擊立刻回到目前所在地"):
+with c_home_btn:
+    if st.button("🎯", use_container_width=True, help="回到我的真實位置"):
         st.session_state.active_target = {
             "name": f"📍 目前所在地：{st.session_state.my_home_location['name']}",
             "lat": st.session_state.my_home_location["lat"],
@@ -861,12 +887,6 @@ with c_home:
 # -------------------------------------------------------------
 # 10. 天氣資料獲取與運算
 # -------------------------------------------------------------
-active_name = st.session_state.active_target["name"]
-active_lat = st.session_state.active_target["lat"]
-active_lon = st.session_state.active_target["lon"]
-
-st.markdown(f"**目前觀測地點：** `{active_name}`")
-
 weather_data, aqi_data = fetch_weather_and_aqi(active_lat, active_lon)
 
 current = weather_data.get("current", {})
@@ -947,21 +967,22 @@ elif cur_temp >= 29:
 else:
     temp_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</span>'
 
+# 上方精簡版狀態列（保留叮嚀一句話與右側警示指標）
 st.markdown(
     f'<div class="assistant-intro-box">'
-    f'<div style="flex: 1; min-width: 280px;">🤖 <strong>生活管家叮嚀：</strong>{intro}</div>'
+    f'<div style="font-weight: 500;">🤖 <strong>生活叮嚀：</strong>{intro}</div>'
     f'<div class="badge-wrapper">{temp_badge}{rain_badge}{uv_badge}{aqi_badge}</div>'
     f'</div>',
     unsafe_allow_html=True
 )
 
 # -------------------------------------------------------------
-# 12. 即時微氣象與生活決策看板
+# 12. 氣象與生活小幫手（刪除「與環境狀態」與「決策指南」贅字）
 # -------------------------------------------------------------
 col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
 with col_weather:
-    st.markdown("##### ⚡ 即時微氣象與環境狀態")
+    st.markdown("##### ⚡ 即時微氣象")
     st.markdown(
         f'<div class="weather-hero-card" style="background: {hero_bg};">'
         f'<div style="display: flex; justify-content: space-between; align-items: center;">'
@@ -979,7 +1000,11 @@ with col_weather:
     col_act2.info(f"🛵 **通勤與出行指引**\n\n{commute_tip}")
 
 with col_tips:
-    st.markdown("##### 💡 生活小幫手決策指南")
+    st.markdown("##### 💡 生活小幫手")
+    
+    # 整合叮嚀精華至生活小幫手頂部
+    st.markdown(f'<div class="compact-tip-box">✨ <strong>出門建議：</strong>{intro}</div>', unsafe_allow_html=True)
+
     with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=True):
         st.markdown(w_desc)
 
@@ -991,7 +1016,7 @@ with col_tips:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報 (修復 Markdown 縮排錯誤，保證 HTML 卡片正常渲染)
+# 13. 未來 6 小時即時預報
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -1010,7 +1035,6 @@ for i in range(len(times)):
 
 st.markdown(f'<div class="weather-scroll-row">{"".join(hourly_cards)}</div>', unsafe_allow_html=True)
 
-# 趨勢折線圖
 chart_data = pd.DataFrame({
     "時間": times,
     "氣溫 (°C)": temps,
@@ -1021,7 +1045,7 @@ st.line_chart(chart_data, height=180)
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望 (修復 Markdown 縮排錯誤，保證 HTML 卡片正常渲染)
+# 14. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if daily_dates:
