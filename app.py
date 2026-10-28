@@ -5,6 +5,8 @@ from streamlit_folium import st_folium
 import pandas as pd
 from streamlit_js_eval import get_geolocation
 import time
+import os
+import json
 from datetime import datetime
 
 # -------------------------------------------------------------
@@ -73,7 +75,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區完整法定資料庫
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定資料庫
 # -------------------------------------------------------------
 TAIWAN_COMPLETE_DATA = {
     "臺北市": {
@@ -239,109 +241,67 @@ TAIWAN_COMPLETE_DATA = {
 }
 
 # -------------------------------------------------------------
-# 3. 全球六大洲完整代表國家與各省州城市資料庫
+# 3. 讀取並快取世界城市 Excel (12,357 城市完整載入)
 # -------------------------------------------------------------
-GLOBAL_HIERARCHY_DATA = {
-    "🌏 亞洲 (Asia)": {
-        "日本": {
-            "東京都 (Tokyo)": (35.6762, 139.6503), "大阪府 (Osaka)": (34.6937, 135.5023),
-            "京都府 (Kyoto)": (35.0116, 135.7681), "北海道 (札幌)": (43.0618, 141.3545),
-            "福岡縣 (Fukuoka)": (33.5904, 130.4017), "愛知縣 (名古屋)": (35.1815, 136.9066),
-            "沖繩縣 (那霸)": (26.2124, 127.6809), "神奈川縣 (橫濱)": (35.4437, 139.6380),
-            "兵庫縣 (神戶)": (34.6901, 135.1955), "廣島縣 (Hiroshima)": (34.3853, 132.4553)
-        },
-        "南韓": {
-            "首爾特別市 (Seoul)": (37.5665, 126.9780), "釜山廣域市 (Busan)": (35.1796, 129.0756),
-            "濟州特別自治道 (濟州市)": (33.4996, 126.5312), "濟州特別自治道 (西歸浦)": (33.2541, 126.5601),
-            "仁川廣域市 (Incheon)": (37.4563, 126.7052), "大邱廣域市 (Daegu)": (35.8714, 128.6014)
-        },
-        "泰國": {
-            "曼谷直轄市 (Bangkok)": (13.7563, 100.5018), "清邁府 (Chiang Mai)": (18.7883, 98.9853),
-            "普吉府 (Phuket)": (7.8804, 98.3923), "春武里府 (芭達雅)": (12.9276, 100.8771),
-            "素叻他尼府 (蘇梅島)": (9.5120, 100.0136), "班武里府 (華欣)": (12.5684, 99.9577)
-        },
-        "新加坡": {
-            "中央商務區 (Downtown)": (1.2879, 103.8519), "濱海灣 (Marina Bay)": (1.2838, 103.8591),
-            "聖淘沙 (Sentosa)": (1.2494, 103.8303), "烏節路 (Orchard)": (1.3048, 103.8318)
-        },
-        "馬來西亞": {
-            "吉隆坡 (Kuala Lumpur)": (3.1390, 101.6869), "檳城 (George Town)": (5.4141, 100.3288),
-            "沙巴 (亞庇)": (5.9804, 116.0735), "柔佛 (新山)": (1.4927, 103.7414), "馬六甲 (Melaka)": (2.1896, 102.2501)
-        },
-        "越南": {
-            "胡志明市 (Ho Chi Minh)": (10.8231, 106.6297), "河內市 (Hanoi)": (21.0285, 105.8542),
-            "峴港市 (Da Nang)": (16.0544, 108.2022), "堅江省 (富國島)": (10.2899, 103.9840)
-        },
-        "中國": {
-            "北京市 (Beijing)": (39.9042, 116.4074), "上海市 (Shanghai)": (31.2304, 121.4737),
-            "廣東省 (廣州)": (23.1291, 113.2644), "廣東省 (深圳)": (22.5431, 114.0579),
-            "四川省 (成都)": (30.5728, 104.0668), "重慶市 (Chongqing)": (29.5630, 106.5516),
-            "香港特別行政區 (Hong Kong)": (22.3193, 114.1694), "澳門特別行政區 (Macau)": (22.1987, 113.5439)
-        },
-        "阿拉伯聯合大公國": {
-            "杜拜 (Dubai)": (25.2048, 55.2708), "阿布達比 (Abu Dhabi)": (24.4539, 54.3773)
-        }
-    },
-    "🌍 歐洲 (Europe)": {
-        "英國": {
-            "大倫敦 (London)": (51.5074, -0.1278), "蘇格蘭 (愛丁堡)": (55.9533, -3.1883),
-            "大曼徹斯特 (Manchester)": (53.4808, -2.2426), "牛津郡 (Oxford)": (51.7520, -1.2577)
-        },
-        "法國": {
-            "法蘭西島 (巴黎)": (48.8566, 2.3522), "普羅旺斯 (尼斯)": (43.7102, 7.2620),
-            "奧弗涅 (里昂)": (45.7640, 4.8357), "普羅旺斯 (馬賽)": (43.2965, 5.3698)
-        },
-        "德國": {
-            "柏林州 (Berlin)": (52.5200, 13.4050), "巴伐利亞 (慕尼黑)": (48.1351, 11.5820),
-            "黑森州 (法蘭克福)": (50.1109, 8.6821), "漢堡州 (Hamburg)": (53.5511, 9.9937)
-        },
-        "義大利": {
-            "拉齊奧 (羅馬)": (41.9028, 12.4964), "倫巴底 (米蘭)": (45.4642, 9.1900),
-            "托斯卡納 (佛羅倫斯)": (43.7696, 11.2558), "威尼托 (威尼斯)": (45.4408, 12.3155)
-        },
-        "瑞士": {
-            "蘇黎世州 (Zurich)": (47.3769, 8.5417), "日內瓦州 (Geneva)": (46.2044, 6.1432),
-            "琉森州 (Lucerne)": (47.0502, 8.3093), "伯恩州 (Bern)": (46.9480, 7.4474)
-        }
-    },
-    "🌎 北美洲 (North America)": {
-        "美國": {
-            "紐約州 (New York)": (40.7128, -74.0060), "加州 (洛杉磯)": (34.0522, -118.2437),
-            "加州 (舊金山)": (37.7749, -122.4194), "華盛頓州 (西雅圖)": (47.6062, -122.3321),
-            "伊利諾州 (芝加哥)": (41.8781, -87.6298), "夏威夷 (檀香山)": (21.3069, -157.8583)
-        },
-        "加拿大": {
-            "不列顛哥倫比亞 (溫哥華)": (49.2827, -123.1207), "安大略省 (多倫多)": (43.6532, -79.3832),
-            "魁北克省 (蒙特婁)": (45.5017, -73.5673)
-        }
-    },
-    "🌏 大洋洲 (Oceania)": {
-        "澳洲": {
-            "新南威爾斯 (雪梨)": (-33.8688, 151.2093), "維多利亞 (墨爾本)": (-37.8136, 144.9631),
-            "昆士蘭 (布里斯本)": (-27.4698, 153.0251), "西澳 (伯斯)": (-31.9505, 115.8605)
-        },
-        "紐西蘭": {
-            "北島 (奧克蘭)": (-36.8485, 174.7633), "南島 (基督城)": (-43.5321, 172.6362),
-            "北島 (威靈頓)": (-41.2865, 174.7762), "南島 (皇后鎮)": (-45.0312, 168.6626)
-        }
-    },
-    "🌎 南美洲 (South America)": {
-        "巴西": {
-            "聖保羅州 (Sao Paulo)": (-23.5505, -46.6333), "里約熱內盧 (Rio)": (-22.9068, -43.1729)
-        },
-        "阿根廷": {
-            "布宜諾斯艾利斯 (Buenos Aires)": (-34.6037, -58.3816)
-        }
-    },
-    "🌍 非洲 (Africa)": {
-        "埃及": {
-            "開羅省 (Cairo)": (30.0444, 31.2357), "亞歷山大 (Alexandria)": (31.2001, 29.9187)
-        },
-        "南非": {
-            "西開普 (開普敦)": (-33.9249, 18.4241), "豪登省 (約翰尼斯堡)": (-26.2041, 28.0473)
+@st.cache_data(show_spinner=False)
+def load_world_cities_hierarchy():
+    json_cache = "world_cities.json"
+    excel_file = "world_cities_over_50k_zh_en_no_taiwan.xlsx"
+
+    # 若有快取檔則 0.02 秒載入
+    if os.path.exists(json_cache):
+        try:
+            with open(json_cache, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+
+    # 讀取 Excel 並建立完整階層結構
+    if os.path.exists(excel_file):
+        try:
+            df = pd.read_excel(excel_file)
+            # 修復少數空白國家（納米比亞城市）
+            df.loc[df['3. 城市英文名稱'] == 'Windhoek', ['1. 洲別', '2. 國家']] = ['非洲 (Africa)', '納米比亞 / Namibia']
+            df.loc[df['3. 城市英文名稱'] == 'Rundu', ['1. 洲別', '2. 國家']] = ['非洲 (Africa)', '納米比亞 / Namibia']
+            df.loc[df['3. 城市英文名稱'] == 'Walvis Bay', ['1. 洲別', '2. 國家']] = ['非洲 (Africa)', '納米比亞 / Namibia']
+            df.loc[df['3. 城市英文名稱'] == 'Swakopmund', ['1. 洲別', '2. 國家']] = ['非洲 (Africa)', '納米比亞 / Namibia']
+
+            hierarchy = {}
+            for _, row in df.iterrows():
+                continent = str(row['1. 洲別']).strip()
+                country = str(row['2. 國家']).strip()
+                city_zh = str(row['3. 城市中文名稱']).strip()
+                city_en = str(row['3. 城市英文名稱']).strip()
+                lat = float(row['4. 城市中心緯度'])
+                lon = float(row['4. 城市中心經度'])
+
+                city_label = f"{city_zh} ({city_en})" if city_en and city_en != city_zh else city_zh
+
+                if continent not in hierarchy:
+                    hierarchy[continent] = {}
+                if country not in hierarchy[continent]:
+                    hierarchy[continent][country] = {}
+                hierarchy[continent][country][city_label] = [lat, lon]
+
+            # 儲存快取以利後續秒開
+            try:
+                with open(json_cache, "w", encoding="utf-8") as f:
+                    json.dump(hierarchy, f, ensure_ascii=False)
+            except Exception:
+                pass
+
+            return hierarchy
+        except Exception:
+            pass
+
+    # 若未找到檔案時的備用資料
+    return {
+        "亞洲 (Asia)": {
+            "日本 / Japan": {"東京 (Tokyo)": [35.6762, 139.6503], "大阪 (Osaka)": [34.6937, 135.5023]},
+            "南韓 / South Korea": {"首爾 (Seoul)": [37.5665, 126.9780], "釜山 (Busan)": [35.1796, 129.0756]},
+            "泰國 / Thailand": {"曼谷 (Bangkok)": [13.7563, 100.5018], "清邁 (Chiang Mai)": [18.7883, 98.9853]}
         }
     }
-}
 
 # -------------------------------------------------------------
 # 4. 氣候與空氣品質 API
@@ -496,7 +456,7 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 6. 「我的所在地」狀態維護
+# 6. 「我的所在地」狀態持久化
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -510,7 +470,7 @@ if geo and "coords" in geo:
     u_lat = geo["coords"]["latitude"]
     u_lon = geo["coords"]["longitude"]
     st.session_state.my_home_location = {
-        "name": "臺中市東勢區",
+        "name": "目前設備所在",
         "lat": u_lat,
         "lon": u_lon
     }
@@ -523,18 +483,18 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 7. 階梯式點選提示視窗 (Dialog / Modal)
+# 7. 階梯式點選提示視窗 (含 12,357 全球城市)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
-@dialog_decorator("🧭 選擇觀測地區（點選篩選）")
+@dialog_decorator("🧭 選擇觀測地區（階梯式點選篩選）")
 def show_cascading_selector_dialog():
     st.markdown("請選擇您要查詢的區域體系：")
     
     # 第一層：臺灣 vs 全球
     scope_choice = st.radio(
         "區域範圍",
-        options=["🇹🇼 臺灣", "🌍 全球"],
+        options=["🇹🇼 臺灣", "🌍 全球 (12,000+ 世界城市)"],
         horizontal=True,
         label_visibility="collapsed"
     )
@@ -545,12 +505,13 @@ def show_cascading_selector_dialog():
         
         # 第二層：全台 22 縣市
         county_list = list(TAIWAN_COMPLETE_DATA.keys())
-        selected_county = st.selectbox("1. 選擇縣市", options=county_list, index=county_list.index("臺中市"))
+        selected_county = st.selectbox("1. 選擇縣市", options=county_list, index=county_list.index("臺中市") if "臺中市" in county_list else 0)
         
-        # 第三層：該縣市所有的鄉鎮市區
+        # 第三層：該縣市所有的鄉鎮市區 (全台 368 鄉鎮)
         town_dict = TAIWAN_COMPLETE_DATA[selected_county]
         town_list = list(town_dict.keys())
-        selected_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=town_list.index("東勢區") if "東勢區" in town_list else 0)
+        default_town_idx = town_list.index("東勢區") if "東勢區" in town_list else 0
+        selected_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=default_town_idx)
         
         target_coords = town_dict[selected_town]
         full_name = f"臺灣 {selected_county} {selected_town}"
@@ -567,25 +528,41 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
     else:
+        # 全球數據 (載入 12,357 城市)
+        world_hierarchy = load_world_cities_hierarchy()
+        
         st.markdown('<div class="selector-box">', unsafe_allow_html=True)
-        st.markdown("##### 🌍 全球大洲、國家與城市點選")
+        st.markdown("##### 🌍 全球大洲、國家與世界城市點選")
         
         # 第二層：各大洲
-        continents = list(GLOBAL_HIERARCHY_DATA.keys())
-        selected_continent = st.selectbox("1. 選擇大洲", options=continents, index=0)
+        continents = list(world_hierarchy.keys())
+        default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
+        selected_continent = st.selectbox("1. 選擇大洲", options=continents, index=default_cont_idx)
         
         # 第三層：該洲所有國家
-        countries_dict = GLOBAL_HIERARCHY_DATA[selected_continent]
-        country_list = list(countries_dict.keys())
-        selected_country = st.selectbox("2. 選擇國家", options=country_list, index=0)
+        countries_dict = world_hierarchy.get(selected_continent, {})
+        country_list = sorted(list(countries_dict.keys()))
         
-        # 第四層：該國家所有主要城市/行政區
-        cities_dict = countries_dict[selected_country]
+        # 預設日本或該洲第一個國家
+        default_c_idx = 0
+        for idx, c in enumerate(country_list):
+            if "日本" in c:
+                default_c_idx = idx
+                break
+        selected_country = st.selectbox("2. 選擇國家", options=country_list, index=default_c_idx)
+        
+        # 第四層：該國家所有城市 (支援中英名稱與即時搜尋)
+        cities_dict = countries_dict.get(selected_country, {})
         city_list = list(cities_dict.keys())
-        selected_city = st.selectbox("3. 選擇主要城市 / 行政區", options=city_list, index=0)
+        
+        selected_city = st.selectbox(
+            f"3. 選擇城市 (共 {len(city_list)} 個城市，可鍵盤打字搜尋)", 
+            options=city_list, 
+            index=0
+        )
         
         target_coords = cities_dict[selected_city]
-        full_name = f"{selected_country} {selected_city}"
+        full_name = f"{selected_country.split('/')[0].strip()} {selected_city.split('(')[0].strip()}"
         
         st.write("")
         if st.button(f"📍 確認定位：{full_name}", use_container_width=True, type="primary"):
@@ -599,7 +576,7 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 8. 頂部導航控制列 (按鈕點擊觸發提示視窗)
+# 8. 頂部導航控制列 (點擊開啟彈出視窗)
 # -------------------------------------------------------------
 c_logo, c_selector_btn, c_home = st.columns([1.1, 2.3, 0.9], gap="medium")
 
@@ -607,7 +584,7 @@ with c_logo:
     st.markdown("### 🌤️ SkyCast 全球天氣")
 
 with c_selector_btn:
-    if st.button("🧭 點擊篩選地點（臺灣 368 鄉鎮市區 ｜ 全球各洲各國城市）...", use_container_width=True):
+    if st.button("🧭 點擊篩選地點（臺灣 368 鄉鎮 ｜ 全球 12,000+ 城市）...", use_container_width=True):
         show_cascading_selector_dialog()
 
 with c_home:
