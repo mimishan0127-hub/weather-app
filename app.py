@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與 RWD 現代美化樣式
+# 1. 頁面全域配置與現代質感樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -23,17 +23,13 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 全域字體與背景柔化 */
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         color: #1e293b;
     }
-    
     header[data-testid="stHeader"] {
         background: transparent;
     }
-
-    /* 響應式容器邊距優化 */
     @media (max-width: 768px) {
         .block-container {
             padding-top: 1rem !important;
@@ -42,8 +38,6 @@ st.markdown("""
             padding-right: 0.85rem !important;
         }
     }
-
-    /* 核心氣象大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 18px;
@@ -57,8 +51,6 @@ st.markdown("""
             padding: 18px 16px;
         }
     }
-
-    /* 生活管家與警示指標響應式容器 */
     .assistant-intro-box {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -80,8 +72,6 @@ st.markdown("""
             padding: 12px 14px;
         }
     }
-
-    /* 警示徽章標籤 */
     .badge-wrapper {
         display: flex;
         gap: 8px;
@@ -102,13 +92,11 @@ st.markdown("""
     .status-badge:hover {
         transform: translateY(-1px);
     }
-
-    /* 行動裝置支援的橫向流暢滑動排版 (Horizontal Scroll Row) */
     .weather-scroll-row {
         display: flex;
         gap: 12px;
         overflow-x: auto;
-        padding: 4px 2px 12px 2px;
+        padding: 6px 2px 14px 2px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
     }
@@ -119,8 +107,6 @@ st.markdown("""
         background: #cbd5e1;
         border-radius: 6px;
     }
-
-    /* 逐時微型卡片 */
     .hourly-scroll-card {
         flex: 0 0 105px;
         background: #ffffff;
@@ -135,8 +121,6 @@ st.markdown("""
         transform: translateY(-3px);
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
     }
-
-    /* 7天預報卡片 */
     .daily-scroll-card {
         flex: 0 0 120px;
         background: #ffffff;
@@ -151,8 +135,6 @@ st.markdown("""
         transform: translateY(-3px);
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
     }
-
-    /* 地圖圓角包裹框 */
     .map-frame-container {
         border-radius: 16px;
         overflow: hidden;
@@ -160,8 +142,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         margin-top: 8px;
     }
-
-    /* 彈窗選擇器區塊 */
     .selector-box {
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;
@@ -545,7 +525,6 @@ def load_world_cities_hierarchy():
         if found_path:
             break
 
-    # 1. 優先從快取 JSON 秒開
     if found_path and found_path.endswith(".json"):
         try:
             with open(found_path, "r", encoding="utf-8") as f:
@@ -553,7 +532,6 @@ def load_world_cities_hierarchy():
         except Exception:
             pass
 
-    # 2. 原生免套件解構 XLSX
     if found_path and found_path.endswith(".xlsx"):
         try:
             hierarchy = parse_xlsx_without_packages(found_path)
@@ -567,7 +545,6 @@ def load_world_cities_hierarchy():
         except Exception:
             pass
 
-    # 3. CSV 備用
     if found_path and found_path.endswith(".csv"):
         try:
             df = pd.read_csv(found_path)
@@ -772,7 +749,7 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 階梯式點選提示視窗 (已刪除資料庫狀態提示字串)
+# 8. 階梯式點選提示視窗
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -820,12 +797,10 @@ def show_cascading_selector_dialog():
         st.markdown('<div class="selector-box">', unsafe_allow_html=True)
         st.markdown("##### 🌍 全球大洲、國家與世界城市點選")
         
-        # 第二層：各大洲
         continents = list(world_hierarchy.keys())
         default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
         selected_continent = st.selectbox("1. 選擇大洲", options=continents, index=default_cont_idx)
         
-        # 第三層：該洲所有國家
         countries_dict = world_hierarchy.get(selected_continent, {})
         country_list = sorted(list(countries_dict.keys()))
         
@@ -836,7 +811,6 @@ def show_cascading_selector_dialog():
                 break
         selected_country = st.selectbox("2. 選擇國家", options=country_list, index=default_c_idx if country_list else None)
         
-        # 第四層：該國家所有城市
         cities_dict = countries_dict.get(selected_country, {}) if selected_country else {}
         city_list = list(cities_dict.keys())
         
@@ -864,7 +838,7 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 9. 頂部簡潔導航控制列 (已簡化按鈕文字)
+# 9. 頂部簡潔導航控制列
 # -------------------------------------------------------------
 c_logo, c_selector_btn, c_home = st.columns([1.2, 1.8, 1.0], gap="medium")
 
@@ -973,20 +947,13 @@ elif cur_temp >= 29:
 else:
     temp_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</span>'
 
-# 生活管家橫幅 + 右側 4 大動態顏色指標
-st.markdown(f"""
-<div class="assistant-intro-box">
-    <div style="flex: 1; min-width: 280px;">
-        🤖 <strong>生活管家叮嚀：</strong>{intro}
-    </div>
-    <div class="badge-wrapper">
-        {temp_badge}
-        {rain_badge}
-        {uv_badge}
-        {aqi_badge}
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    f'<div class="assistant-intro-box">'
+    f'<div style="flex: 1; min-width: 280px;">🤖 <strong>生活管家叮嚀：</strong>{intro}</div>'
+    f'<div class="badge-wrapper">{temp_badge}{rain_badge}{uv_badge}{aqi_badge}</div>'
+    f'</div>',
+    unsafe_allow_html=True
+)
 
 # -------------------------------------------------------------
 # 12. 即時微氣象與生活決策看板
@@ -995,22 +962,17 @@ col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
 with col_weather:
     st.markdown("##### ⚡ 即時微氣象與環境狀態")
-    st.markdown(f"""
-    <div class="weather-hero-card" style="background: {hero_bg};">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div style="font-size: 34px; font-weight: 700; line-height: 1.2;">{icon} {cur_temp}°C</div>
-                <div style="font-size: 15px; opacity: 0.95; margin-top: 4px;">{condition} ｜ 體感 {cur_feels}°C</div>
-            </div>
-            <div style="text-align: right; font-size: 13px; opacity: 0.95; line-height: 1.7;">
-                <div>💧 降雨機率 <strong>{cur_rain}%</strong> ｜ 濕度 <strong>{cur_hum}%</strong></div>
-                <div style="margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.22); display: inline-block;">
-                    ☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) ｜ 🍃 AQI <strong>{aqi_val}</strong>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="weather-hero-card" style="background: {hero_bg};">'
+        f'<div style="display: flex; justify-content: space-between; align-items: center;">'
+        f'<div><div style="font-size: 34px; font-weight: 700; line-height: 1.2;">{icon} {cur_temp}°C</div>'
+        f'<div style="font-size: 15px; opacity: 0.95; margin-top: 4px;">{condition} ｜ 體感 {cur_feels}°C</div></div>'
+        f'<div style="text-align: right; font-size: 13px; opacity: 0.95; line-height: 1.7;">'
+        f'<div>💧 降雨機率 <strong>{cur_rain}%</strong> ｜ 濕度 <strong>{cur_hum}%</strong></div>'
+        f'<div style="margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.22); display: inline-block;">'
+        f'☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) ｜ 🍃 AQI <strong>{aqi_val}</strong></div></div></div></div>',
+        unsafe_allow_html=True
+    )
 
     col_act1, col_act2 = st.columns(2)
     col_act1.info(f"🏃 **戶外與運動**\n\n{sport_tip}")
@@ -1029,23 +991,24 @@ with col_tips:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報 (RWD 橫向滑動卡片)
+# 13. 未來 6 小時即時預報 (修復 Markdown 縮排錯誤，保證 HTML 卡片正常渲染)
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
-hourly_cards_html = '<div class="weather-scroll-row">'
+hourly_cards = []
 for i in range(len(times)):
     h_icon, _ = resolve_weather(codes[i])
-    hourly_cards_html += f"""
-    <div class="hourly-scroll-card">
-        <div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>
-        <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
-        <div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>
-        <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>
-    </div>
-    """
-hourly_cards_html += '</div>'
-st.markdown(hourly_cards_html, unsafe_allow_html=True)
+    card_html = (
+        f'<div class="hourly-scroll-card">'
+        f'<div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>'
+        f'<div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>'
+        f'<div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>'
+        f'<div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>'
+        f'</div>'
+    )
+    hourly_cards.append(card_html)
+
+st.markdown(f'<div class="weather-scroll-row">{"".join(hourly_cards)}</div>', unsafe_allow_html=True)
 
 # 趨勢折線圖
 chart_data = pd.DataFrame({
@@ -1058,11 +1021,11 @@ st.line_chart(chart_data, height=180)
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望 (RWD 橫向滑動卡片)
+# 14. 未來一週 (7天) 展望 (修復 Markdown 縮排錯誤，保證 HTML 卡片正常渲染)
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if daily_dates:
-    daily_cards_html = '<div class="weather-scroll-row">'
+    daily_cards = []
     for d_idx, d_date_str in enumerate(daily_dates):
         d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
         d_weekday = weekdays_zh[d_obj.weekday()]
@@ -1072,18 +1035,19 @@ if daily_dates:
         r_max = daily_rain_p[d_idx] if daily_rain_p else 0
         u_max = daily_uv_max[d_idx] if daily_uv_max else 0.0
 
-        daily_cards_html += f"""
-        <div class="daily-scroll-card">
-            <div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>
-            <div style="font-size: 26px; margin: 6px 0;">{d_icon}</div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>
-            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>
-            <div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>
-            <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
-        </div>
-        """
-    daily_cards_html += '</div>'
-    st.markdown(daily_cards_html, unsafe_allow_html=True)
+        d_card_html = (
+            f'<div class="daily-scroll-card">'
+            f'<div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>'
+            f'<div style="font-size: 26px; margin: 6px 0;">{d_icon}</div>'
+            f'<div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>'
+            f'<div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>'
+            f'<div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>'
+            f'<div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>'
+            f'</div>'
+        )
+        daily_cards.append(d_card_html)
+
+    st.markdown(f'<div class="weather-scroll-row">{"".join(daily_cards)}</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -1092,7 +1056,6 @@ st.markdown("---")
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
-# 透過參數嚴格鎖定地圖，避免行動裝置滑過時意外偏移
 map_instance = folium.Map(
     location=[active_lat, active_lon],
     zoom_start=13,
@@ -1109,7 +1072,6 @@ folium.Marker(
     icon=folium.Icon(color="blue", icon="cloud")
 ).add_to(map_instance)
 
-# 嵌入帶有圓角容器保護的地圖
 st.markdown('<div class="map-frame-container">', unsafe_allow_html=True)
 st_folium(map_instance, width=None, height=300, returned_objects=[])
 st.markdown('</div>', unsafe_allow_html=True)
