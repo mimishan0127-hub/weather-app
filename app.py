@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與現代質感樣式
+# 1. 頁面全域配置與 RWD 現代美化樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -23,69 +23,151 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    /* 全域字體與背景柔化 */
     html, body, [class*="css"] {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: #1e293b;
     }
+    
     header[data-testid="stHeader"] {
         background: transparent;
     }
+
+    /* 響應式容器邊距優化 */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+        }
+    }
+
+    /* 核心氣象大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
-        border-radius: 16px;
+        border-radius: 18px;
         color: white;
         margin-bottom: 14px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    @media (max-width: 768px) {
+        .weather-hero-card {
+            padding: 18px 16px;
+        }
+    }
+
+    /* 生活管家與警示指標響應式容器 */
     .assistant-intro-box {
-        background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
-        border-left: 4px solid #0284c7;
-        padding: 12px 18px;
-        border-radius: 10px;
-        margin-bottom: 14px;
-        color: #0f172a;
-        font-size: 14px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #0284c7;
+        padding: 14px 18px;
+        border-radius: 14px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
     }
-    .mini-card {
-        background: #ffffff;
-        border: 1px solid #eef2f6;
-        border-radius: 12px;
-        padding: 10px 4px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        transition: transform 0.2s ease;
+    @media (max-width: 768px) {
+        .assistant-intro-box {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px 14px;
+        }
     }
-    .mini-card:hover {
-        transform: translateY(-2px);
-    }
-    .daily-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px 6px;
-        text-align: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    }
-    .selector-box {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 16px;
-        margin-top: 10px;
+
+    /* 警示徽章標籤 */
+    .badge-wrapper {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
     }
     .status-badge {
         font-size: 12px;
         font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 16px;
+        padding: 5px 12px;
+        border-radius: 20px;
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        transition: transform 0.2s ease;
+    }
+    .status-badge:hover {
+        transform: translateY(-1px);
+    }
+
+    /* 行動裝置支援的橫向流暢滑動排版 (Horizontal Scroll Row) */
+    .weather-scroll-row {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px 2px 12px 2px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .weather-scroll-row::-webkit-scrollbar {
+        height: 6px;
+    }
+    .weather-scroll-row::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 6px;
+    }
+
+    /* 逐時微型卡片 */
+    .hourly-scroll-card {
+        flex: 0 0 105px;
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 14px;
+        padding: 12px 6px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+    }
+    .hourly-scroll-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+    }
+
+    /* 7天預報卡片 */
+    .daily-scroll-card {
+        flex: 0 0 120px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 8px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+    }
+    .daily-scroll-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+    }
+
+    /* 地圖圓角包裹框 */
+    .map-frame-container {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        margin-top: 8px;
+    }
+
+    /* 彈窗選擇器區塊 */
+    .selector-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -690,7 +772,7 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 階梯式點選提示視窗 (已移除資料庫提示)
+# 8. 階梯式點選提示視窗 (已刪除資料庫狀態提示字串)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -782,7 +864,7 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 9. 頂部導航控制列 (簡潔按鈕)
+# 9. 頂部簡潔導航控制列 (已簡化按鈕文字)
 # -------------------------------------------------------------
 c_logo, c_selector_btn, c_home = st.columns([1.2, 1.8, 1.0], gap="medium")
 
@@ -857,7 +939,6 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_list, uv_sta
 # -------------------------------------------------------------
 # 11. 4 大警示指標動態顏色運算
 # -------------------------------------------------------------
-# 1. 降雨警示
 if cur_rain >= 60:
     rain_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">💧 降雨 {cur_rain}% (警戒)</span>'
 elif cur_rain >= 30:
@@ -865,7 +946,6 @@ elif cur_rain >= 30:
 else:
     rain_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">💧 降雨 {cur_rain}% (良好)</span>'
 
-# 2. 紫外線警示
 if cur_uv >= 8:
     uv_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">☀️ 紫外線 {cur_uv:.1f} (過量危險)</span>'
 elif cur_uv >= 6:
@@ -875,7 +955,6 @@ elif cur_uv >= 3:
 else:
     uv_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">☀️ 紫外線 {cur_uv:.1f} (微量)</span>'
 
-# 3. 空汙警示
 if aqi_val >= 150:
     aqi_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🍃 空污 AQI {aqi_val} (有害)</span>'
 elif aqi_val >= 101:
@@ -885,7 +964,6 @@ elif aqi_val >= 51:
 else:
     aqi_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🍃 空污 AQI {aqi_val} (良好)</span>'
 
-# 4. 溫度警示
 if cur_temp >= 33:
     temp_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🌡️ 溫度 {cur_temp}°C (酷熱警戒)</span>'
 elif cur_temp <= 15:
@@ -895,13 +973,13 @@ elif cur_temp >= 29:
 else:
     temp_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</span>'
 
-# 帶有右側頁面提示指標的生活管家橫幅
+# 生活管家橫幅 + 右側 4 大動態顏色指標
 st.markdown(f"""
 <div class="assistant-intro-box">
-    <div style="flex: 1; min-width: 300px;">
+    <div style="flex: 1; min-width: 280px;">
         🤖 <strong>生活管家叮嚀：</strong>{intro}
     </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+    <div class="badge-wrapper">
         {temp_badge}
         {rain_badge}
         {uv_badge}
@@ -911,7 +989,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 12. 即時氣象與生活決策大看板
+# 12. 即時微氣象與生活決策看板
 # -------------------------------------------------------------
 col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
@@ -951,23 +1029,25 @@ with col_tips:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時預報趨勢
+# 13. 未來 6 小時即時預報 (RWD 橫向滑動卡片)
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
-hour_cols = st.columns(6)
+
+hourly_cards_html = '<div class="weather-scroll-row">'
 for i in range(len(times)):
     h_icon, _ = resolve_weather(codes[i])
-    with hour_cols[i]:
-        st.markdown(f"""
-        <div class="mini-card">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>
-            <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
-            <div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>
-            <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>
-        </div>
-        """, unsafe_allow_html=True)
+    hourly_cards_html += f"""
+    <div class="hourly-scroll-card">
+        <div style="font-size: 12px; color: #64748b; font-weight: 600;">{times[i]}</div>
+        <div style="font-size: 24px; margin: 4px 0;">{h_icon}</div>
+        <div style="font-size: 15px; font-weight: 700; color: #1e293b;">{temps[i]}°C</div>
+        <div style="font-size: 11px; color: #0284c7; margin-top: 2px;">💧 {rains[i]}%</div>
+    </div>
+    """
+hourly_cards_html += '</div>'
+st.markdown(hourly_cards_html, unsafe_allow_html=True)
 
-st.write("")
+# 趨勢折線圖
 chart_data = pd.DataFrame({
     "時間": times,
     "氣溫 (°C)": temps,
@@ -978,11 +1058,11 @@ st.line_chart(chart_data, height=180)
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望
+# 14. 未來一週 (7天) 展望 (RWD 橫向滑動卡片)
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if daily_dates:
-    day_cols = st.columns(len(daily_dates))
+    daily_cards_html = '<div class="weather-scroll-row">'
     for d_idx, d_date_str in enumerate(daily_dates):
         d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
         d_weekday = weekdays_zh[d_obj.weekday()]
@@ -991,27 +1071,28 @@ if daily_dates:
         t_max, t_min = daily_max_t[d_idx], daily_min_t[d_idx]
         r_max = daily_rain_p[d_idx] if daily_rain_p else 0
         u_max = daily_uv_max[d_idx] if daily_uv_max else 0.0
-        
-        with day_cols[d_idx]:
-            st.markdown(f"""
-            <div class="daily-card">
-                <div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>
-                <div style="font-size: 28px; margin: 6px 0;">{d_icon}</div>
-                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>
-                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>
-                <div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>
-                <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
-            </div>
-            """, unsafe_allow_html=True)
+
+        daily_cards_html += f"""
+        <div class="daily-scroll-card">
+            <div style="font-size: 12px; color: #475569; font-weight: 600;">{d_title}</div>
+            <div style="font-size: 26px; margin: 6px 0;">{d_icon}</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">{d_cond}</div>
+            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{t_max:.0f}° / <span style="color:#64748b; font-weight:400;">{t_min:.0f}°</span></div>
+            <div style="font-size: 11px; color: #0284c7; margin-top: 3px; font-weight: 600;">💧 {r_max}%</div>
+            <div style="font-size: 10px; color: #ea580c; margin-top: 2px;">☀️ UV {u_max:.0f}</div>
+        </div>
+        """
+    daily_cards_html += '</div>'
+    st.markdown(daily_cards_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 地圖置底呈現與位置完全固定 (禁止拖曳偏移)
+# 15. 地圖置底呈現與位置完全固定 (完全防拖曳與觸控位移)
 # -------------------------------------------------------------
-st.markdown(f"##### 🗺️ 觀測座標中心位置")
+st.markdown("##### 🗺️ 觀測座標中心位置")
 
-# 完全鎖定地圖屬性：dragging=False, zoom_control=False, scrollWheelZoom=False, doubleClickZoom=False
+# 透過參數嚴格鎖定地圖，避免行動裝置滑過時意外偏移
 map_instance = folium.Map(
     location=[active_lat, active_lon],
     zoom_start=13,
@@ -1028,5 +1109,7 @@ folium.Marker(
     icon=folium.Icon(color="blue", icon="cloud")
 ).add_to(map_instance)
 
-# returned_objects=[] 鎖定回傳避免點擊引起頁面重跑刷新
-st_folium(map_instance, width=None, height=360, returned_objects=[])
+# 嵌入帶有圓角容器保護的地圖
+st.markdown('<div class="map-frame-container">', unsafe_allow_html=True)
+st_folium(map_instance, width=None, height=300, returned_objects=[])
+st.markdown('</div>', unsafe_allow_html=True)
