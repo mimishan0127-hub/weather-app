@@ -71,45 +71,32 @@ st.markdown("""
         }
     }
 
-    /* 精簡通知與警示指標容器 */
-    .assistant-intro-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-left: 5px solid #0284c7;
-        padding: 10px 16px;
-        border-radius: 14px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
+    /* 箭頭處 4 大指標響應式網格 (桌機 4 欄，手機 2x2) */
+    .status-grid-bottom {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 14px;
     }
     @media (max-width: 768px) {
-        .assistant-intro-box {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 10px 12px;
+        .status-grid-bottom {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    /* 警示徽章標籤 */
-    .badge-wrapper {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
     .status-badge {
         font-size: 12px;
         font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 20px;
+        padding: 6px 4px;
+        border-radius: 14px;
         white-space: nowrap;
-        display: inline-flex;
+        display: flex;
+        justify-content: center;
         align-items: center;
-        gap: 4px;
+        text-align: center;
+        gap: 3px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     /* 橫向滑動卡片流 */
@@ -658,12 +645,11 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 6. 生活管家決策引擎（提示極致精簡化）
+# 6. 生活管家決策引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
 
-    # 簡化為直觀的一句話叮嚀
     if rain_prob >= 60:
         intro_text = f"有雨路滑（體感 {feels_like}°C），出門請隨身攜帶雨具、放慢車速。"
     elif uv_val >= 8:
@@ -676,23 +662,23 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         intro_text = f"氣候舒適宜人（體感 {feels_like}°C），適宜外出踏青散心或戶外活動。"
 
     if temp >= 28:
-        wear_headline = "涼感排汗短袖 ＋ 輕薄防曬遮陽"
+        wear_headline = "舒適短袖 / 薄襯衫"
         wear_desc = f"""
-        * **日間穿著**：著透氣吸汗短袖或棉麻寬鬆上衣。
-        * **紫外線提示**：目前紫外線為 **{uv_status}**（指數 {uv_val:.1f}），{uv_tip}
-        * **溫差應對**：室內外溫差常達 5°C 以上，建議備薄開襟衫防冷氣著涼。
+        * **日間穿著**：透氣吸汗短袖或棉麻寬鬆上衣。
+        * **防曬提醒**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），{uv_tip}
+        * **室內溫差**：室內外溫差常達 5°C 以上，建議備薄開襟衫防冷氣著涼。
         """
     elif 21 <= temp < 28:
-        wear_headline = "舒適短袖 / 襯衫 ＋ 早晚防風薄外套"
+        wear_headline = "舒適短袖 / 襯衫 ＋ 薄外套"
         wear_desc = f"""
         * **日間穿著**：純棉 T-shirt、薄長袖或休閒襯衫剛剛好。
-        * **紫外線提示**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），請適度防曬。
+        * **防曬提醒**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），請適度防曬。
         * **早晚應對**：早晚日夜溫差約 3～6°C，建議攜帶薄夾克或風衣。
         """
     else:
-        wear_headline = "保暖洋蔥式穿搭 ＋ 厚外套/風衣"
+        wear_headline = "洋蔥式保暖 ＋ 厚外套/風衣"
         wear_desc = f"""
-        * **內層親膚**：棉質長袖或輕量發熱衣鎖住核心體溫。
+        * **內層保暖**：棉質長袖或輕量發熱衣鎖住核心體溫。
         * **外層禦寒**：搭配防風外套、羊毛大衣或羽絨背心。
         * **防風配件**：步行或騎車配戴防風圍巾降低體感寒意。
         """
@@ -704,7 +690,7 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         * **推薦清洗**：床單、被套等難乾大件物品請把握今日！
         """
     elif rain_prob >= 50 or humidity >= 80:
-        dry_headline = "不建議室外曬衣（建議室內搭配除濕機）"
+        dry_headline = "不建議室外（建議搭配除濕機）"
         dry_desc = f"""
         * **受潮風險**：降雨機率高達 {rain_prob}%，空氣濕度飽和，室外晾掛易吸附潮氣。
         * **解決方式**：改掛於室內通風處，搭配除濕機或低溫烘乾。
@@ -858,7 +844,7 @@ def show_cascading_selector_dialog():
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 9. 頂部隱藏式導航列（地名即按鈕膠囊化）
+# 9. 頂部隱藏式導航列（地名膠囊化）
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = st.session_state.active_target["lat"]
@@ -933,51 +919,42 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_list, uv_sta
 # -------------------------------------------------------------
 # 11. 4 大警示指標動態顏色運算
 # -------------------------------------------------------------
-if cur_rain >= 60:
-    rain_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">💧 降雨 {cur_rain}% (警戒)</span>'
-elif cur_rain >= 30:
-    rain_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">💧 降雨 {cur_rain}% (注意)</span>'
+if cur_temp >= 33:
+    temp_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🌡️ 溫度 {cur_temp}°C (酷熱)</div>'
+elif cur_temp <= 15:
+    temp_badge = f'<div class="status-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">🌡️ 溫度 {cur_temp}°C (低溫)</div>'
+elif cur_temp >= 29:
+    temp_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🌡️ 溫度 {cur_temp}°C (偏熱)</div>'
 else:
-    rain_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">💧 降雨 {cur_rain}% (良好)</span>'
+    temp_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</div>'
+
+if cur_rain >= 60:
+    rain_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">💧 降雨 {cur_rain}% (警戒)</div>'
+elif cur_rain >= 30:
+    rain_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">💧 降雨 {cur_rain}% (注意)</div>'
+else:
+    rain_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">💧 降雨 {cur_rain}% (良好)</div>'
 
 if cur_uv >= 8:
-    uv_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">☀️ 紫外線 {cur_uv:.1f} (過量危險)</span>'
+    uv_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">☀️ 紫外線 {cur_uv:.1f} (過量)</div>'
 elif cur_uv >= 6:
-    uv_badge = f'<span class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">☀️ 紫外線 {cur_uv:.1f} (高量)</span>'
+    uv_badge = f'<div class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">☀️ 紫外線 {cur_uv:.1f} (高量)</div>'
 elif cur_uv >= 3:
-    uv_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">☀️ 紫外線 {cur_uv:.1f} (中量)</span>'
+    uv_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">☀️ 紫外線 {cur_uv:.1f} (中量)</div>'
 else:
-    uv_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">☀️ 紫外線 {cur_uv:.1f} (微量)</span>'
+    uv_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">☀️ 紫外線 {cur_uv:.1f} (微量)</div>'
 
 if aqi_val >= 150:
-    aqi_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🍃 空污 AQI {aqi_val} (有害)</span>'
+    aqi_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🍃 空污 AQI {aqi_val} (有害)</div>'
 elif aqi_val >= 101:
-    aqi_badge = f'<span class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">🍃 空污 AQI {aqi_val} (敏感橘警)</span>'
+    aqi_badge = f'<div class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">🍃 空污 AQI {aqi_val} (敏感)</div>'
 elif aqi_val >= 51:
-    aqi_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🍃 空污 AQI {aqi_val} (普通)</span>'
+    aqi_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🍃 空污 AQI {aqi_val} (普通)</div>'
 else:
-    aqi_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🍃 空污 AQI {aqi_val} (良好)</span>'
-
-if cur_temp >= 33:
-    temp_badge = f'<span class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🌡️ 溫度 {cur_temp}°C (酷熱警戒)</span>'
-elif cur_temp <= 15:
-    temp_badge = f'<span class="status-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">🌡️ 溫度 {cur_temp}°C (低溫防寒)</span>'
-elif cur_temp >= 29:
-    temp_badge = f'<span class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🌡️ 溫度 {cur_temp}°C (偏熱)</span>'
-else:
-    temp_badge = f'<span class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</span>'
-
-# 上方精簡版狀態列（保留叮嚀一句話與右側警示指標）
-st.markdown(
-    f'<div class="assistant-intro-box">'
-    f'<div style="font-weight: 500;">🤖 <strong>生活叮嚀：</strong>{intro}</div>'
-    f'<div class="badge-wrapper">{temp_badge}{rain_badge}{uv_badge}{aqi_badge}</div>'
-    f'</div>',
-    unsafe_allow_html=True
-)
+    aqi_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🍃 空污 AQI {aqi_val} (良好)</div>'
 
 # -------------------------------------------------------------
-# 12. 氣象與生活小幫手（刪除「與環境狀態」與「決策指南」贅字）
+# 12. 即時微氣象與生活小幫手
 # -------------------------------------------------------------
 col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
@@ -1002,16 +979,27 @@ with col_weather:
 with col_tips:
     st.markdown("##### 💡 生活小幫手")
     
-    # 整合叮嚀精華至生活小幫手頂部
     st.markdown(f'<div class="compact-tip-box">✨ <strong>出門建議：</strong>{intro}</div>', unsafe_allow_html=True)
 
-    with st.expander(f"👕 **穿著與防曬提案**：{w_head}", expanded=True):
+    # 標題精簡為「穿著」與「曬衣」
+    with st.expander(f"👕 **穿著**：{w_head}", expanded=True):
         st.markdown(w_desc)
 
-    with st.expander(f"🧺 **曬衣防霉攻略**：{d_head}", expanded=False):
+    with st.expander(f"🧺 **曬衣**：{d_head}", expanded=False):
         st.markdown(d_desc)
 
     st.caption("🎒 **隨身行囊建議**：" + " ｜ ".join(pack_list))
+
+    # 4 大指標依箭頭指示置於生活小幫手底部
+    st.markdown(
+        f'<div class="status-grid-bottom">'
+        f'{temp_badge}'
+        f'{rain_badge}'
+        f'{uv_badge}'
+        f'{aqi_badge}'
+        f'</div>',
+        unsafe_allow_html=True
+    )
 
 st.markdown("---")
 
