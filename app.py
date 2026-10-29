@@ -23,7 +23,21 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
+    /* 1. 徹底隱藏 Streamlit 內建頂部導航列 (Share, Star, GitHub, 選單、頁尾等) */
+    header[data-testid="stHeader"],
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    .stAppDeployButton,
+    #MainMenu,
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 2. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -33,11 +47,8 @@ st.markdown("""
         color: #0f172a;
         background-color: #f8fafc;
     }
-    header[data-testid="stHeader"] {
-        background: transparent;
-    }
 
-    /* 2. 邊距極致適配 */
+    /* 3. 邊距極致適配 */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -53,7 +64,7 @@ st.markdown("""
         }
     }
 
-    /* 3. 頂部 App 品牌標題 */
+    /* 4. 頂部 App 品牌標題 */
     .app-brand-title {
         font-size: 20px;
         font-weight: 800;
@@ -66,7 +77,7 @@ st.markdown("""
         letter-spacing: -0.3px;
     }
 
-    /* 4. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
+    /* 5. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
     div[data-testid="stHorizontalBlock"]:first-of-type {
         background-color: #e2e8f0 !important;
         padding: 4px !important;
@@ -112,7 +123,7 @@ st.markdown("""
         color: #334155 !important;
     }
 
-    /* 5. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 6. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -397,127 +408,11 @@ BUILTIN_TAIWAN_DATA = {
 }
 
 # -------------------------------------------------------------
-# 3. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
-# -------------------------------------------------------------
-def parse_xlsx_without_packages(filename):
-    with zipfile.ZipFile(filename, 'r') as z:
-        shared_strings = []
-        if 'xl/sharedStrings.xml' in z.namelist():
-            tree = ET.fromstring(z.read('xl/sharedStrings.xml'))
-            for si in tree.findall('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}si'):
-                texts = [t.text for t in si.iter('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t') if t.text]
-                shared_strings.append("".join(texts))
-        
-        sheet_xml = z.read('xl/worksheets/sheet1.xml')
-        tree = ET.fromstring(sheet_xml)
-        
-        rows = []
-        for row in tree.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}row'):
-            row_data = []
-            for c in row.findall('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}c'):
-                t = c.get('t')
-                v = c.find('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v')
-                val = v.text if v is not None else ""
-                if t == 's' and val.isdigit():
-                    val = shared_strings[int(val)]
-                row_data.append(val)
-            rows.append(row_data)
-
-    hierarchy = {}
-    for row in rows[1:]:
-        if len(row) < 6:
-            continue
-        continent, country, city_zh, city_en, lat_str, lon_str = row[0], row[1], row[2], row[3], row[4], row[5]
-        
-        continent = str(continent).strip()
-        country = str(country).strip()
-        city_zh = str(city_zh).strip()
-        city_en = str(city_en).strip()
-
-        if continent in ['未知', '', 'None']:
-            continue
-            
-        try:
-            lat = float(lat_str)
-            lon = float(lon_str)
-        except (ValueError, TypeError):
-            continue
-
-        is_tw = any(k in country for k in ["臺灣", "台灣", "Taiwan"])
-        if is_tw:
-            city_label = f"{city_zh} {city_en}" if city_en and city_en != city_zh else city_zh
-        else:
-            city_label = f"{city_zh} ({city_en})" if city_en and city_en != city_zh else city_zh
-
-        if continent not in hierarchy:
-            hierarchy[continent] = {}
-        if country not in hierarchy[continent]:
-            hierarchy[continent][country] = {}
-        hierarchy[continent][country][city_label] = [lat, lon]
-
-    return hierarchy
-
-@st.cache_data(show_spinner=False)
-def load_all_cities_hierarchy():
-    possible_names = [
-        "world_cities_and_taiwan.json",
-        "world_cities_and_taiwan.xlsx",
-        "world_cities_over_50k_zh_en_no_taiwan.xlsx",
-        "world_cities.json"
-    ]
-    
-    search_dirs = [
-        os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else "",
-        os.getcwd(),
-        os.path.join(os.getcwd(), ".."),
-    ]
-    search_dirs = [d for d in search_dirs if d and os.path.exists(d)]
-    
-    found_path = None
-    for d in search_dirs:
-        for name in possible_names:
-            p = os.path.join(d, name)
-            if os.path.exists(p):
-                found_path = p
-                break
-        if found_path:
-            break
-
-    if found_path and found_path.endswith(".json"):
-        try:
-            with open(found_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-
-    if found_path and found_path.endswith(".xlsx"):
-        try:
-            hierarchy = parse_xlsx_without_packages(found_path)
-            try:
-                cache_out = os.path.join(os.path.dirname(found_path), "world_cities_and_taiwan.json")
-                with open(cache_out, "w", encoding="utf-8") as f:
-                    json.dump(hierarchy, f, ensure_ascii=False)
-            except Exception:
-                pass
-            return hierarchy
-        except Exception:
-            pass
-
-    return {
-        "亞洲 (Asia)": {
-            "日本 / Japan": {
-                "東京 (Tokyo)": [35.6762, 139.6503],
-                "大阪 (Osaka)": [34.6937, 135.5023]
-            }
-        }
-    }
-
-# -------------------------------------------------------------
 # 4. 資料庫整合：自動合併試算表與臺灣完整座標
 # -------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def get_taiwan_and_search_index():
-    hierarchy = load_all_cities_hierarchy()
+    hierarchy = load_world_cities_hierarchy()
     taiwan_data = {c: dict(t) for c, t in BUILTIN_TAIWAN_DATA.items()}
 
     for continent, countries in hierarchy.items():
@@ -770,7 +665,6 @@ dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None
 def render_location_dialog_content():
     st.markdown("#### 🧭 請選擇查詢地區")
 
-    # 單純直覺的二選一：臺灣 或 全球
     region_type = st.radio(
         "區域選擇",
         options=["🇹🇼 臺灣鄉鎮", "🌍 全球城市"],
