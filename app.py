@@ -41,31 +41,70 @@ st.markdown("""
         }
     }
 
-    /* 頂部極簡 App Bar */
-    .top-navbar-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        padding: 2px 0;
+    /* 【關鍵修復】強制頂部導航列在手機/桌機上 100% 保持同一排，絕不換行 */
+    div[data-testid="stHorizontalBlock"]:first-of-type,
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
     }
+
+    /* 頂部標題與按鈕欄位比例鎖定 */
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"],
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) > div[data-testid="column"] {
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 0 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* 第一欄：標題欄自動吃滿剩餘寬度 */
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:first-child,
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) > div[data-testid="column"]:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    /* 第二欄與第三欄：按鈕欄固定 40px，緊湊靠右 */
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(2),
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) > div[data-testid="column"]:nth-child(2),
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(3),
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) > div[data-testid="column"]:nth-child(3) {
+        flex: 0 0 40px !important;
+        width: 40px !important;
+        max-width: 40px !important;
+        justify-content: center !important;
+    }
+
     .app-brand-title {
-        font-size: 20px;
+        font-size: 19px;
         font-weight: 800;
         color: #0f172a;
         letter-spacing: -0.4px;
+        white-space: nowrap;
         display: flex;
         align-items: center;
         gap: 6px;
+        margin: 0;
+        line-height: 38px;
     }
 
-    /* 放大鏡與定位 圓形圖標按鈕 */
-    div[data-testid="column"] button {
+    /* 頂部放大鏡與定位圓形圖標按鈕 */
+    div[data-testid="stHorizontalBlock"]:first-of-type button,
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) button {
         border-radius: 50% !important;
         width: 38px !important;
         height: 38px !important;
         min-height: 38px !important;
+        max-width: 38px !important;
         padding: 0 !important;
+        margin: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -75,9 +114,9 @@ st.markdown("""
         font-size: 16px !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
         transition: all 0.2s ease !important;
-        margin-left: auto !important;
     }
-    div[data-testid="column"] button:hover {
+    div[data-testid="stHorizontalBlock"]:first-of-type button:hover,
+    div[data-testid="stHorizontalBlock"]:has(.app-brand-title) button:hover {
         border-color: #0284c7 !important;
         color: #0284c7 !important;
         background-color: #f0f9ff !important;
@@ -800,7 +839,7 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部極簡 App Bar (SkyCast + 🔍 搜尋 + 📍 定位)
+# 9. 頂部極簡 App Bar (品牌名稱與 🔍、📍 圖標強制同一排)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -808,18 +847,21 @@ active_lon = float(st.session_state.active_target["lon"])
 
 display_location_text = active_name.replace("📍 ", "").replace("目前所在地:", "")
 
-# 採用 3 欄並列：左側標題，右側收納 🔍 與 📍 兩個圓形圖標按鈕
-c_title, c_search, c_gps = st.columns([5.0, 1.0, 1.0])
+# 採用固定比例欄位：標題彈性吃滿，兩個圖標緊湊靠右並列
+try:
+    c_title, c_search, c_gps = st.columns([7, 1, 1], gap="small", vertical_alignment="center")
+except TypeError:
+    c_title, c_search, c_gps = st.columns([7, 1, 1], gap="small")
 
 with c_title:
     st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣</div>', unsafe_allow_html=True)
 
 with c_search:
-    if st.button("🔍", help="搜尋地名或切換地區"):
+    if st.button("🔍", key="top_search_btn", help="搜尋地名或切換地區"):
         show_cascading_selector_dialog()
 
 with c_gps:
-    if st.button("📍", help="一鍵返回設備當前 GPS 定位"):
+    if st.button("📍", key="top_gps_btn", help="一鍵返回設備當前 GPS 定位"):
         st.session_state.active_target = {
             "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
             "lat": float(st.session_state.my_home_location["lat"]),
@@ -910,7 +952,7 @@ else:
     aqi_badge_text, aqi_bg, aqi_color = f"良好 · AQI {aqi_val}", "#f0fdf4", "#15803d"
 
 # -------------------------------------------------------------
-# 12. 【第一優先展示】天氣概況核心大卡片 (內建清楚地名)
+# 12. 【第一優先展示】天氣概況核心大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -932,7 +974,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 13. 【第二展示】天氣概況正下方 3 大指標迷你卡 (降雨、紫外線、空污)
+# 13. 【第二展示】天氣概況正下方 3 大指標迷你卡
 # -------------------------------------------------------------
 st.markdown(
     f"""
