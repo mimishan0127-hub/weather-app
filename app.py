@@ -34,20 +34,20 @@ st.markdown("""
     /* 手機版面全局邊距優化 */
     @media (max-width: 768px) {
         .block-container {
-            padding-top: 0.6rem !important;
-            padding-bottom: 2rem !important;
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 1.5rem !important;
+            padding-left: 0.65rem !important;
+            padding-right: 0.65rem !important;
         }
 
-        /* 強制頂部控制列在手機端保持單行橫向並列，不折行不變形 */
+        /* 強制頂部導航列在手機上單行排列，不折行不變大 */
         div[data-testid="stHorizontalBlock"]:first-of-type {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
             gap: 6px !important;
-            margin-bottom: 8px !important;
+            margin-bottom: 6px !important;
         }
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:first-child {
             flex: 0 0 auto !important;
@@ -62,10 +62,11 @@ st.markdown("""
             width: 38px !important;
         }
 
-        div[data-testid="stHorizontalBlock"]:first-of-type button {
+        /* 手機端頂部按鈕尺寸精緻化 */
+        div[data-testid="column"] button {
             height: 36px !important;
             min-height: 36px !important;
-            padding: 0 10px !important;
+            padding: 2px 10px !important;
             font-size: 13px !important;
             border-radius: 18px !important;
             white-space: nowrap !important;
@@ -74,8 +75,8 @@ st.markdown("""
         }
     }
 
-    /* 頂部膠囊按鈕質感微調 */
-    div[data-testid="stHorizontalBlock"]:first-of-type button {
+    /* 電腦端頂部膠囊按鈕 */
+    div[data-testid="column"] button {
         border-radius: 20px;
         border: 1px solid #cbd5e1;
         background-color: #ffffff;
@@ -84,36 +85,79 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         transition: all 0.2s ease;
     }
-    div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
+    div[data-testid="column"] button:hover {
         border-color: #0284c7;
         color: #0284c7;
         background-color: #f0f9ff;
+        transform: translateY(-1px);
     }
 
     .app-brand-title {
-        font-size: 18px;
+        font-size: 19px;
         font-weight: 800;
         color: #0f172a;
+        letter-spacing: -0.3px;
         white-space: nowrap;
         display: flex;
         align-items: center;
-        padding-right: 2px;
+        gap: 4px;
+        padding-right: 4px;
     }
 
-    /* 招牌經典深藍色漸層大卡片 (Weather Hero Card) */
+    /* 核心氣象大卡片 */
     .weather-hero-card {
-        padding: 22px 24px;
-        border-radius: 20px;
+        padding: 20px 22px;
+        border-radius: 18px;
         color: white;
         margin-top: 4px;
-        margin-bottom: 14px;
-        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25), 0 8px 10px -6px rgba(30, 58, 138, 0.15);
+        margin-bottom: 10px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
     @media (max-width: 768px) {
         .weather-hero-card {
-            padding: 18px 16px;
+            padding: 16px 16px;
         }
+    }
+
+    /* 3 大核心指標迷你卡網格 (降雨、紫外線、空污) */
+    .kpi-three-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .kpi-mini-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 10px 6px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .kpi-mini-title {
+        font-size: 11.5px;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .kpi-mini-val {
+        font-size: 21px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.15;
+        margin: 2px 0 4px 0;
+    }
+    .kpi-mini-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        white-space: nowrap;
     }
 
     /* 橫向滑動卡片流 */
@@ -134,7 +178,7 @@ st.markdown("""
     }
 
     .hourly-scroll-card {
-        flex: 0 0 105px;
+        flex: 0 0 100px;
         background: #ffffff;
         border: 1px solid #f1f5f9;
         border-radius: 14px;
@@ -143,7 +187,7 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
     .daily-scroll-card {
-        flex: 0 0 120px;
+        flex: 0 0 115px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -172,7 +216,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定定位庫 (保底 100% 精準度)
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區基底定位庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -566,15 +610,15 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         diff_note = ""
 
     if rain_prob >= 60:
-        intro_text = f"路面潮濕易滑（體感 {feels_like:.1f}°C{diff_note}），出門請隨身攜帶雨具並放慢車速。"
+        intro_text = f"路面潮濕易滑（體感 {feels_like}°C{diff_note}），出門請隨身攜帶雨具並放慢車速。"
     elif uv_val >= 8:
         intro_text = f"紫外線偏強（UV {uv_val:.1f}），外出請加強防曬並適時補充水分。"
     elif temp >= 29:
-        intro_text = f"體感偏熱（體感 {feels_like:.1f}°C{diff_note}），外出活動請防曬、多喝水預防中暑。"
+        intro_text = f"體感偏熱（體感 {feels_like}°C{diff_note}），外出活動請防曬、多喝水預防中暑。"
     elif temp <= 18:
-        intro_text = f"天氣偏涼（體感 {feels_like:.1f}°C{diff_note}），早晚溫差大，出門建議洋蔥式穿搭。"
+        intro_text = f"天氣偏涼（體感 {feels_like}°C{diff_note}），早晚溫差大，出門建議洋蔥式穿搭。"
     else:
-        intro_text = f"氣候舒適宜人（體感 {feels_like:.1f}°C{diff_note}），非常適宜外出踏青或戶外活動。"
+        intro_text = f"氣候舒適宜人（體感 {feels_like}°C{diff_note}），非常適宜外出踏青或戶外活動。"
 
     ref_temp = feels_like
     if ref_temp >= 28:
@@ -671,7 +715,7 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 選擇觀測地區彈窗 (純淨無多餘輸入格)
+# 8. 選擇觀測地區彈窗
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -770,7 +814,7 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部精準導航列 (地名膠囊化與手機端單行固定)
+# 9. 頂部精簡導航列 (地名膠囊化與手機端單行固定)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -778,7 +822,7 @@ active_lon = float(st.session_state.active_target["lon"])
 
 display_location_text = active_name.replace("📍 ", "").replace("目前所在地:", "")
 
-c_logo, c_capsule_btn, c_home_btn = st.columns([1.1, 2.2, 0.45], gap="small")
+c_logo, c_capsule_btn, c_home_btn = st.columns([1.0, 2.2, 0.4], gap="small")
 
 with c_logo:
     st.markdown('<div class="app-brand-title">🌤️ SkyCast</div>', unsafe_allow_html=True)
@@ -788,7 +832,7 @@ with c_capsule_btn:
         show_cascading_selector_dialog()
 
 with c_home_btn:
-    if st.button("🎯", use_container_width=True, help="定位至目前設備位置"):
+    if st.button("🎯", use_container_width=True, help="定位至設備所在位置"):
         st.session_state.active_target = {
             "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
             "lat": float(st.session_state.my_home_location["lat"]),
@@ -839,40 +883,83 @@ aqi_current = aqi_data.get("current", {})
 aqi_val = int(aqi_current.get("us_aqi", 35)) if aqi_current.get("us_aqi") is not None else 35
 pm25_val = aqi_current.get("pm2_5", 8.5)
 
-# 經典質感深海藍漸層
-if cur_temp >= 32:
-    hero_bg = "linear-gradient(135deg, #ea580c 0%, #f97316 100%)"  # 酷暑暖橘
-elif cur_temp <= 16:
-    hero_bg = "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)"  # 偏寒深藍
+if cur_temp >= 28:
+    hero_bg = "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)"
+elif cur_temp <= 18:
+    hero_bg = "linear-gradient(135deg, #4b6cb7 0%, #182848 100%)"
 else:
-    hero_bg = "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)"  # 經典質感深海藍
+    hero_bg = "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)"
 
 intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_status_str = get_comprehensive_assistant_advice(
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
 
 # -------------------------------------------------------------
-# 11. 【核心展示】原汁原味經典藍色氣象大卡片 (The Blue Block)
+# 11. 3 大指標語意與動態配色計算 (降雨、紫外線、空污)
+# -------------------------------------------------------------
+# 降雨
+if cur_rain >= 60:
+    r_status, r_bg, r_color = "高機率有雨", "#fee2e2", "#b91c1c"
+elif cur_rain >= 30:
+    r_status, r_bg, r_color = "局部短暫雨", "#fef3c7", "#b45309"
+else:
+    r_status, r_bg, r_color = "降雨機率低", "#f0fdf4", "#15803d"
+
+# 紫外線
+if cur_uv >= 8:
+    uv_badge_text, uv_bg, uv_color = f"過量 · UV {cur_uv:.1f}", "#fee2e2", "#b91c1c"
+elif cur_uv >= 6:
+    uv_badge_text, uv_bg, uv_color = f"高量 · UV {cur_uv:.1f}", "#ffedd5", "#c2410c"
+elif cur_uv >= 3:
+    uv_badge_text, uv_bg, uv_color = f"中量 · UV {cur_uv:.1f}", "#fef3c7", "#b45309"
+else:
+    uv_badge_text, uv_bg, uv_color = f"微量 · UV {cur_uv:.1f}", "#f0fdf4", "#15803d"
+
+# 空氣品質
+if aqi_val >= 150:
+    aqi_badge_text, aqi_bg, aqi_color = f"有害 · AQI {aqi_val}", "#fee2e2", "#b91c1c"
+elif aqi_val >= 101:
+    aqi_badge_text, aqi_bg, aqi_color = f"敏感 · AQI {aqi_val}", "#ffedd5", "#c2410c"
+elif aqi_val >= 51:
+    aqi_badge_text, aqi_bg, aqi_color = f"普通 · AQI {aqi_val}", "#fef3c7", "#b45309"
+else:
+    aqi_badge_text, aqi_bg, aqi_color = f"良好 · AQI {aqi_val}", "#f0fdf4", "#15803d"
+
+# -------------------------------------------------------------
+# 12. 【第一優先展示】天氣概況核心卡片
+# -------------------------------------------------------------
+st.markdown(
+    f'<div class="weather-hero-card" style="background: {hero_bg};">'
+    f'<div style="display: flex; justify-content: space-between; align-items: center;">'
+    f'<div><div style="font-size: 36px; font-weight: 800; line-height: 1.15;">{icon} {cur_temp:.1f}°C</div>'
+    f'<div style="font-size: 15.5px; opacity: 0.95; margin-top: 5px;">{condition} · 體感約 {cur_feels:.1f}°C</div></div>'
+    f'<div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.65;">'
+    f'<div>💨 風速 <strong>{cur_wind} km/h</strong></div>'
+    f'<div>💧 濕度 <strong>{cur_hum}%</strong></div>'
+    f'</div></div></div>',
+    unsafe_allow_html=True
+)
+
+# -------------------------------------------------------------
+# 13. 【第二展示】天氣概況正下方 3 大指標卡 (降雨、紫外線、空污)
 # -------------------------------------------------------------
 st.markdown(
     f"""
-    <div class="weather-hero-card" style="background: {hero_bg};">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-size: 38px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;">
-                    {icon} {cur_temp:.1f}°C
-                </div>
-                <div style="font-size: 16px; opacity: 0.95; margin-top: 6px; font-weight: 500;">
-                    {condition} · 體感 {cur_feels:.1f}°C
-                </div>
-            </div>
-            <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.75;">
-                <div>💧 降雨機率 <strong>{cur_rain}%</strong> | 濕度 <strong>{cur_hum}%</strong></div>
-                <div>💨 風速 <strong>{cur_wind} km/h</strong></div>
-                <div style="margin-top: 6px; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,0.22); display: inline-block; font-size: 12.5px;">
-                    ☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) | 🍃 AQI <strong>{aqi_val}</strong>
-                </div>
-            </div>
+    <div class="kpi-three-grid">
+        <div class="kpi-mini-card">
+            <div class="kpi-mini-title">💧 降雨機率</div>
+            <div class="kpi-mini-val">{cur_rain}%</div>
+            <div class="kpi-mini-badge" style="background: {r_bg}; color: {r_color};">{r_status}</div>
+        </div>
+        <div class="kpi-mini-card">
+            <div class="kpi-mini-title">☀️ 紫外線</div>
+            <div class="kpi-mini-val">{cur_uv:.1f}</div>
+            <div class="kpi-mini-badge" style="background: {uv_bg}; color: {uv_color};">{uv_badge_text}</div>
+        </div>
+        <div class="kpi-mini-card">
+            <div class="kpi-mini-title">🍃 空氣品質</div>
+            <div class="kpi-mini-val">{aqi_val}</div>
+            <div class="kpi-mini-badge" style="background: {aqi_bg}; color: {aqi_color};">{aqi_badge_text}</div>
         </div>
     </div>
     """,
@@ -880,7 +967,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 12. 【生活小幫手】(預設收折，整齊俐落)
+# 14. 【第三展示】生活小幫手 (簡約重點摘要 + 預設折疊)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -891,7 +978,7 @@ with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
 with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
     st.markdown(d_desc)
 
-with st.expander(f"🏃 **運動與出行指引**", expanded=False):
+with st.expander(f"🏃 **運動與外出提醒**：戶外活動與通勤指引", expanded=False):
     st.markdown(f"**🏃 戶外活動與運動**\n\n{sport_tip}")
     st.markdown(f"**🛵 通勤出行建議**\n\n{commute_tip}")
 
@@ -901,7 +988,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報趨勢
+# 15. 未來 6 小時即時預報趨勢
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -933,7 +1020,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望
+# 16. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -967,7 +1054,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 地圖置底呈現 (動態 Key 確保切換鄉鎮即時瞬移置中)
+# 17. 地圖置底呈現 (綁定動態 Key 確保切換地點即時瞬移)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
