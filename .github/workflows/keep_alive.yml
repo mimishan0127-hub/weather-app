@@ -22,27 +22,4 @@ jobs:
           MAIN_STATUS=$(curl -s -L --max-redirs 5 -c /tmp/cookies.txt -b /tmp/cookies.txt -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o /dev/null -w "%{http_code}" "https://weather-app-1027.streamlit.app/" || echo "200")
           echo "Main page visit response status: $MAIN_STATUS"
 
-          echo "✅ SkyCast Weather App keep-alive ping completed successfully!"name: Keep SkyCast App Alive
-
-on:
-  schedule:
-    # 每 4 小時自動執行一次 (UTC 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
-    - cron: '0 */4 * * *'
-  # 支援手動在 GitHub 網頁上點擊立即執行測試
-  workflow_dispatch:
-
-jobs:
-  ping-weather-app:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send keep-alive request to Streamlit App
-        run: |
-          echo "Sending ping to SkyCast Weather App..."
-          # -s 靜音模式, -L 自動跟隨轉址, -I 僅取得標頭降低伺服器負擔
-          HTTP_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" "https://weather-app-1027.streamlit.app/")
-          echo "Ping completed! Server HTTP status code: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 304 ]; then
-            echo "Success: App is active and awake!"
-          else
-            echo "Warning: Response status was $HTTP_STATUS, but request was sent."
-          fi
+          echo "✅ SkyCast Weather App keep-alive ping completed successfully!"
