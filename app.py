@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置 (側邊欄預設隱藏收合 initial_sidebar_state="collapsed")
+# 1. 頁面全域配置 (側邊欄預設收折)
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -24,7 +24,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 隱藏 Streamlit 雲端頂部工具列 (Share, Star, GitHub 等)，但保留側邊欄展開按鈕 */
+    /* 1. 僅隱藏右上角分享、星星、GitHub 等無關按鈕，嚴格保留左上角側邊欄按鈕 */
     [data-testid="stToolbar"],
     .stAppDeployButton,
     #MainMenu,
@@ -45,26 +45,38 @@ st.markdown("""
         padding: 0 !important;
     }
 
+    /* 頂部 Header 保持透明但維持高度以容納按鈕 */
     header[data-testid="stHeader"] {
         background: transparent !important;
-        height: 2.8rem !important;
+        height: 3.2rem !important;
+        z-index: 9999 !important;
     }
 
-    /* 確保左上角側邊欄開關按鈕質感與易點擊性 */
-    [data-testid="collapsedControl"] {
+    /* 2. 【核心修復】強化左上角側邊欄展開按鈕的可見度與觸控範圍 */
+    [data-testid="collapsedControl"],
+    button[kind="header"] {
         display: flex !important;
         visibility: visible !important;
+        opacity: 1 !important;
         top: 0.6rem !important;
         left: 0.6rem !important;
         z-index: 999999 !important;
-        background: #ffffff !important;
+        background-color: #ffffff !important;
+        color: #0284c7 !important;
         border-radius: 12px !important;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12) !important;
         border: 1px solid #cbd5e1 !important;
-        padding: 4px !important;
+        width: 38px !important;
+        height: 38px !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background-color: #f0f9ff !important;
+        border-color: #0284c7 !important;
     }
 
-    /* 2. 嚴格鎖定視窗全域寬度，徹底根除手機橫向滑動與破版 */
+    /* 3. 鎖定全域寬度防橫向破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -75,36 +87,41 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* 3. 邊距極致適配 */
+    /* 4. 邊距極致適配 */
     .block-container {
-        padding-top: 0.8rem !important;
+        padding-top: 0.6rem !important;
         padding-bottom: 2rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
     @media (max-width: 768px) {
         .block-container {
-            padding-top: 0.5rem !important;
+            padding-top: 0.4rem !important;
             padding-bottom: 1.5rem !important;
             padding-left: 0.65rem !important;
             padding-right: 0.65rem !important;
         }
     }
 
-    /* 4. 頂部 App 品牌標題 */
+    /* 5. 頂部 App 品牌標題欄 */
+    .app-brand-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        margin-top: 2px;
+    }
     .app-brand-title {
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 800;
         color: #0f172a;
-        white-space: nowrap;
+        letter-spacing: -0.3px;
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-bottom: 6px;
-        letter-spacing: -0.3px;
     }
 
-    /* 5. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 6. 天氣自適應動態質感深藍大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -153,7 +170,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* 橫向滑動預報卡片流 (12小時滑動展示) */
+    /* 橫向滑動預報卡片流 */
     .weather-scroll-row {
         display: flex;
         gap: 10px;
@@ -191,7 +208,7 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
 
-    /* 6. AI 12小時變化洞察卡片樣式 */
+    /* AI 12小時變化洞察卡片樣式 */
     .ai-summary-card {
         background: #ffffff;
         border: 1px solid #e0f2fe;
@@ -251,10 +268,6 @@ st.markdown("""
         font-size: 13.5px;
         color: #334155;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    }
-
-    .vega-bind, .vg-tooltip {
-        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -561,7 +574,7 @@ def load_all_cities_hierarchy():
 load_world_cities_hierarchy = load_all_cities_hierarchy
 
 # -------------------------------------------------------------
-# 4. 資料庫整合：自動合併試算表與臺灣完整座標
+# 4. 資料庫整合
 # -------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def get_taiwan_and_search_index():
@@ -905,7 +918,7 @@ if "active_target" not in st.session_state:
 taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 9. 階層式選擇視窗 (臺灣鄉鎮 / 全球城市)
+# 9. 階層式選擇視窗
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -976,7 +989,7 @@ else:
         render_location_dialog_content()
 
 # -------------------------------------------------------------
-# 10. 【核心更動】側邊欄地點選單 (平常隱藏收合，展開即可切換)
+# 10. 側邊欄地點選單配置
 # -------------------------------------------------------------
 is_at_home = (
     abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
@@ -998,7 +1011,6 @@ with st.sidebar:
     st.caption(f"目前觀測視角：**{display_location_text}**")
     st.markdown("---")
 
-    # 1. 回到設備目前位置
     btn_type_home = "primary" if is_at_home else "secondary"
     if st.button("📍 目前設備位置", use_container_width=True, type=btn_type_home, key="sidebar_btn_home"):
         st.session_state.active_target = {
@@ -1010,7 +1022,6 @@ with st.sidebar:
 
     st.write("")
     
-    # 2. 開啟階層彈窗
     btn_type_other = "secondary" if is_at_home else "primary"
     if st.button("🌍 挑選其他地區", use_container_width=True, type=btn_type_other, key="sidebar_btn_other"):
         open_location_dialog()
@@ -1038,8 +1049,8 @@ with st.sidebar:
 
     with st.expander("🌍 全球城市直接切換", expanded=False):
         cont_list = list(world_hierarchy.keys())
-        def_cont = cont_list.index("亞洲 (Asia)") if "亞洲 (Asia)" in cont_list else 0
-        sb_cont = st.selectbox("大洲", cont_list, index=def_cont, key="sb_world_cont")
+        def_cont = cont_list.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents if 'continents' in locals() else 0
+        sb_cont = st.selectbox("大洲", cont_list, index=0, key="sb_world_cont")
         c_dict = world_hierarchy.get(sb_cont, {})
         c_list = sorted(list(c_dict.keys()))
         sb_country = st.selectbox("國家", c_list, index=0 if c_list else None, key="sb_world_country")
@@ -1059,9 +1070,15 @@ with st.sidebar:
                 st.rerun()
 
 # -------------------------------------------------------------
-# 11. 主畫面頂部純淨品牌標題
+# 11. 頂部雙重呼叫欄 (有標題 + 直覺呼叫地點按鈕)
 # -------------------------------------------------------------
-st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
+c_head_title, c_head_btn = st.columns([3.5, 1.2])
+with c_head_title:
+    st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
+with c_head_btn:
+    # 雙重防呆：點擊此處也能直接彈出地點選單，免去找側邊欄箭頭的困擾！
+    if st.button("🧭 切換地區", use_container_width=True, key="main_open_location"):
+        open_location_dialog()
 
 # -------------------------------------------------------------
 # 12. 天氣資料獲取與運算 (12 小時預報)
