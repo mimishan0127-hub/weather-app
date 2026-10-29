@@ -51,37 +51,47 @@ st.markdown("""
         margin-top: 2px;
     }
 
-    /* 核心氣象大卡片容器（原生 Container 定製） */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) {
+    /* 【核心修正】天氣大卡片外框：100% 通用 CSS，徹底捨棄 :has()，保證在所有手機絕不掉色 */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
         border-radius: 20px !important;
-        padding: 16px 18px !important;
         border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15) !important;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18) !important;
+        padding: 16px 18px !important;
         margin-bottom: 12px !important;
     }
+    div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {
+        background: transparent !important;
+    }
 
-    /* 卡片內部頂部按鈕列（強制作為單行，永不換行） */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="stHorizontalBlock"] {
+    /* 卡片內部頂部按鈕列：強制單行排列，在手機上絕對不折行 */
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: space-between !important;
         gap: 8px !important;
-        margin-bottom: 4px !important;
+        width: 100% !important;
+        margin-bottom: 6px !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child {
         flex: 1 1 auto !important;
+        width: auto !important;
         min-width: 0 !important;
+        display: flex !important;
+        justify-content: flex-start !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {
         flex: 0 0 38px !important;
         width: 38px !important;
         max-width: 38px !important;
+        min-width: 38px !important;
+        display: flex !important;
+        justify-content: flex-end !important;
     }
 
     /* 卡片內地名按鈕：毛玻璃膠囊造型 */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="column"]:first-child button {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:first-child button {
         background: rgba(0, 0, 0, 0.25) !important;
         color: #ffffff !important;
         border: 1px solid rgba(255, 255, 255, 0.35) !important;
@@ -99,7 +109,7 @@ st.markdown("""
         transition: all 0.2s ease !important;
         width: fit-content !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="column"]:first-child button:hover {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:first-child button:hover {
         background: rgba(0, 0, 0, 0.38) !important;
         border-color: rgba(255, 255, 255, 0.6) !important;
         color: #ffffff !important;
@@ -107,7 +117,7 @@ st.markdown("""
     }
 
     /* 卡片內定位按鈕：毛玻璃圓形造型 */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="column"]:last-child button {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:last-child button {
         background: rgba(0, 0, 0, 0.25) !important;
         color: #ffffff !important;
         border: 1px solid rgba(255, 255, 255, 0.35) !important;
@@ -124,7 +134,7 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
         transition: all 0.2s ease !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) div[data-testid="column"]:last-child button:hover {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:last-child button:hover {
         background: rgba(0, 0, 0, 0.38) !important;
         border-color: rgba(255, 255, 255, 0.6) !important;
         color: #ffffff !important;
@@ -825,7 +835,7 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部乾淨標題（無多餘按鈕）
+# 9. 頂部乾淨標題
 # -------------------------------------------------------------
 st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣</div>', unsafe_allow_html=True)
 
@@ -916,24 +926,22 @@ elif aqi_val >= 51:
 else:
     aqi_badge_text, aqi_bg, aqi_color = f"良好 · AQI {aqi_val}", "#f0fdf4", "#15803d"
 
-# 注入即時天氣卡片動態漸層
+# 【關鍵核心修復】直接為唯一的邊框容器注入漸層色，保證 100% 呈現藍色漸層背景
 st.markdown(f"""
 <style>
-div[data-testid="stVerticalBlockBorderWrapper"]:has(#hero-card-marker) {{
+div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {hero_bg} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 12. 【第一優先展示】天氣概況卡片（內建點擊搜尋地標 + 定位鈕）
+# 12. 【第一優先展示】天氣概況藍色大卡片 (內建點擊搜尋地標 + 定位鈕)
 # -------------------------------------------------------------
 with st.container(border=True):
-    st.markdown('<div id="hero-card-marker"></div>', unsafe_allow_html=True)
-    
     col_loc, col_gps = st.columns([5, 1])
     with col_loc:
-        # 地標膠囊本身即為可點擊搜尋按鈕
+        # 地標按鈕本身點擊即跳出搜尋視窗
         if st.button(f"📍 {display_location_text}  ▾", key="hero_loc_btn", help="點擊搜尋或切換其他地點"):
             show_cascading_selector_dialog()
             
@@ -947,17 +955,17 @@ with st.container(border=True):
             }
             st.rerun()
 
-    # 溫度、天氣狀況、風速與濕度
+    # 溫度、天氣狀況、風速與濕度（高對比白字）
     st.markdown(
         f"""
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; color: white !important;">
             <div>
-                <div style="font-size: 38px; font-weight: 800; line-height: 1.1;">{icon} {cur_temp:.1f}°C</div>
-                <div style="font-size: 15.5px; opacity: 0.95; margin-top: 5px;">{condition} · 體感約 {cur_feels:.1f}°C</div>
+                <div style="font-size: 38px; font-weight: 800; line-height: 1.1; color: white !important;">{icon} {cur_temp:.1f}°C</div>
+                <div style="font-size: 15.5px; opacity: 0.95; margin-top: 5px; color: white !important;">{condition} · 體感約 {cur_feels:.1f}°C</div>
             </div>
-            <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.65;">
-                <div>💨 風速 <strong>{cur_wind} km/h</strong></div>
-                <div>💧 濕度 <strong>{cur_hum}%</strong></div>
+            <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.65; color: white !important;">
+                <div style="color: white !important;">💨 風速 <strong style="color: white !important;">{cur_wind} km/h</strong></div>
+                <div style="color: white !important;">💧 濕度 <strong style="color: white !important;">{cur_hum}%</strong></div>
             </div>
         </div>
         """,
