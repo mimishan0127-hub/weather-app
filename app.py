@@ -97,6 +97,21 @@ st.markdown("""
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
+    /* 彈窗內部選擇器美化 */
+    div[data-testid="stDialog"] {
+        border-radius: 20px !important;
+    }
+    div[data-testid="stDialog"] .stRadio > div {
+        background-color: #f1f5f9;
+        padding: 4px;
+        border-radius: 12px;
+        gap: 6px;
+    }
+    div[data-testid="stDialog"] .stRadio label {
+        font-weight: 600 !important;
+        color: #334155 !important;
+    }
+
     /* 5. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
@@ -504,16 +519,10 @@ def load_all_cities_hierarchy():
 def get_taiwan_and_search_index():
     hierarchy = load_all_cities_hierarchy()
     taiwan_data = {c: dict(t) for c, t in BUILTIN_TAIWAN_DATA.items()}
-    flattened_index = []
-
-    for county, towns in taiwan_data.items():
-        for town, coords in towns.items():
-            flattened_index.append((f"🇹🇼 臺灣 {county} {town}", float(coords[0]), float(coords[1])))
 
     for continent, countries in hierarchy.items():
         for country, cities in countries.items():
             is_taiwan = any(k in country for k in ["臺灣", "台灣", "Taiwan"])
-            clean_c = country.split("/")[0].strip()
 
             for city_label, coords in cities.items():
                 lat_f, lon_f = float(coords[0]), float(coords[1])
@@ -523,10 +532,8 @@ def get_taiwan_and_search_index():
                     town = parts[1] if len(parts) > 1 else parts[0]
                     if county in taiwan_data:
                         taiwan_data[county][town] = (lat_f, lon_f)
-                else:
-                    flattened_index.append((f"🌍 {clean_c} {city_label}", lat_f, lon_f))
 
-    return taiwan_data, flattened_index
+    return taiwan_data, hierarchy
 
 # -------------------------------------------------------------
 # 5. 氣候與空氣品質 API
@@ -563,9 +570,7 @@ def parse_uv_level(uv_val: float):
     else:
         return "危險", "紫外線極強，請多留在室內陰涼處。"
 
-# -------------------------------------------------------------
-# 智慧動態高質感深藍背景引擎 (依即時氣候狀態渲染微光層次)
-# -------------------------------------------------------------
+# 智慧動態高質感深藍背景引擎
 def get_weather_hero_style(code: int, temp: float):
     if code in [0, 1]:
         return (
@@ -755,108 +760,71 @@ if "active_target" not in st.session_state:
         "lon": float(st.session_state.my_home_location["lon"])
     }
 
-taiwan_data, flattened_index = get_taiwan_and_search_index()
-world_hierarchy = load_all_cities_hierarchy()
+taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 8. 專屬對話提示框：選擇想查詢的其他地區 (選完即關閉並更新)
+# 8. 純粹直覺的階層式選擇視窗 (無手動輸入、無推薦標籤，純粹分類挑選)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
 def render_location_dialog_content():
-    st.markdown("#### 🔍 想查詢哪裡的天氣？")
-    st.caption("請輸入地名或點擊快捷標籤，選擇後將自動為您切換天氣：")
+    st.markdown("#### 🧭 請選擇查詢地區")
 
-    # 1. 核心搜尋框
-    search_query = st.text_input(
-        "輸入地名關鍵字",
-        placeholder="例如：東勢、板橋、新宿、巴黎、London...",
-        key="dlg_search_query"
+    # 單純直覺的二選一：臺灣 或 全球
+    region_type = st.radio(
+        "區域選擇",
+        options=["🇹🇼 臺灣鄉鎮", "🌍 全球城市"],
+        horizontal=True,
+        label_visibility="collapsed"
     )
 
-    # 2. 搜尋結果即時呈現 (若有打字即刻列出匹配)
-    if search_query.strip():
-        q = search_query.strip().lower()
-        matched = [item for item in flattened_index if q in item[0].lower()]
-        if matched:
-            st.markdown(f"**找到 {len(matched)} 個相符地點：**")
-            cols = st.columns(2)
-            for idx, (name, lat, lon) in enumerate(matched[:8]):
-                clean_name = name.replace("🇹🇼 ", "").replace("🌍 ", "")
-                with cols[idx % 2]:
-                    if st.button(f"📍 {name}", key=f"dlg_match_{clean_name}_{lat}_{lon}", use_container_width=True):
-                        st.session_state.active_target = {
-                            "name": f"📍 {clean_name}",
-                            "lat": float(lat),
-                            "lon": float(lon)
-                        }
-                        st.rerun()
-        else:
-            st.info("查無符合地點，請嘗試輸入其他關鍵字或至下方選單挑選。")
+    st.write("")
 
-    st.markdown("---")
+    if "臺灣" in region_type:
+        county_list = list(taiwan_data.keys())
+        if county_list:
+            default_c_idx = county_list.index("臺中市") if "臺中市" in county_list else 0
+            sel_county = st.selectbox("1. 選擇縣市", options=county_list, index=default_c_idx)
 
-    # 3. 快捷推薦熱門地標
-    st.markdown("**⚡ 熱門推薦城市：**")
-    c_q1, c_q2, c_q3 = st.columns(3)
-    quick_targets = [
-        ("臺中 東勢", 24.2586, 120.8283),
-        ("新北 板橋", 25.0125, 121.4657),
-        ("臺北 中正", 25.0324, 121.5190),
-        ("高雄 苓雅", 22.6273, 120.3014),
-        ("日本 東京", 35.6762, 139.6503),
-        ("法國 巴黎", 48.8566, 2.3522)
-    ]
-    for idx, (q_name, q_lat, q_lon) in enumerate(quick_targets):
-        col = [c_q1, c_q2, c_q3][idx % 3]
-        with col:
-            if st.button(f"📍 {q_name}", key=f"dlg_q_{idx}", use_container_width=True):
+            town_dict = taiwan_data.get(sel_county, {})
+            town_list = list(town_dict.keys())
+            default_t_idx = town_list.index("東勢區") if "東勢區" in town_list else 0
+            sel_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=default_t_idx if town_list else 0)
+
+            st.write("")
+            if st.button(f"📍 確認觀測：臺灣 {sel_county} {sel_town}", use_container_width=True, type="primary"):
+                coords = town_dict[sel_town]
                 st.session_state.active_target = {
-                    "name": f"📍 {q_name}",
-                    "lat": q_lat,
-                    "lon": q_lon
+                    "name": f"📍 臺灣 {sel_county} {sel_town}",
+                    "lat": float(coords[0]),
+                    "lon": float(coords[1])
                 }
                 st.rerun()
+    else:
+        continents = list(world_hierarchy.keys())
+        default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
+        sel_cont = st.selectbox("1. 篩選大洲", options=continents, index=default_cont_idx)
 
-    # 4. 完整的臺灣鄉鎮與全球大洲選單 (折疊式收納)
-    with st.expander("📂 完整分類清單（臺灣 368 鄉鎮 / 全球大洲城市）", expanded=False):
-        c_sub1, c_sub2 = st.columns(2)
-        with c_sub1:
-            st.markdown("###### 🇹🇼 臺灣鄉鎮")
-            county_list = list(taiwan_data.keys())
-            if county_list:
-                sel_county = st.selectbox("選擇縣市", options=county_list, index=0, key="dlg_sb_county")
-                t_list = list(taiwan_data.get(sel_county, {}).keys())
-                sel_town = st.selectbox("選擇鄉鎮市區", options=t_list, index=0, key="dlg_sb_town")
-                if st.button(f"確認定位至 {sel_town}", use_container_width=True, type="primary", key="dlg_btn_tw_confirm"):
-                    coords = taiwan_data[sel_county][sel_town]
-                    st.session_state.active_target = {
-                        "name": f"📍 臺灣 {sel_county} {sel_town}",
-                        "lat": float(coords[0]),
-                        "lon": float(coords[1])
-                    }
-                    st.rerun()
-        with c_sub2:
-            st.markdown("###### 🌍 全球城市")
-            cont_list = list(world_hierarchy.keys())
-            if cont_list:
-                sel_cont = st.selectbox("選擇大洲", options=cont_list, index=0, key="dlg_sb_cont")
-                c_dict = world_hierarchy.get(sel_cont, {})
-                country_list = sorted(list(c_dict.keys()))
-                sel_country = st.selectbox("選擇國家", options=country_list, index=0 if country_list else None, key="dlg_sb_country")
-                city_dict = c_dict.get(sel_country, {}) if sel_country else {}
-                city_list = list(city_dict.keys())
-                sel_city = st.selectbox("選擇城市", options=city_list, index=0 if city_list else None, key="dlg_sb_city")
-                if sel_city and st.button(f"確認定位至該城市", use_container_width=True, type="primary", key="dlg_btn_world_confirm"):
-                    coords = city_dict[sel_city]
-                    clean_c = sel_country.split('/')[0].strip() if sel_country else ""
-                    clean_t = sel_city.split('(')[0].strip()
-                    st.session_state.active_target = {
-                        "name": f"📍 {clean_c} {clean_t}",
-                        "lat": float(coords[0]),
-                        "lon": float(coords[1])
-                    }
-                    st.rerun()
+        countries_dict = world_hierarchy.get(sel_cont, {})
+        country_list = sorted(list(countries_dict.keys()))
+        sel_country = st.selectbox("2. 挑選國家", options=country_list, index=0 if country_list else None)
+
+        cities_dict = countries_dict.get(sel_country, {}) if sel_country else {}
+        city_list = list(cities_dict.keys())
+        sel_city = st.selectbox("3. 挑選城市", options=city_list, index=0 if city_list else None)
+
+        if sel_city:
+            clean_c = sel_country.split('/')[0].strip() if sel_country else ""
+            clean_t = sel_city.split('(')[0].strip()
+            st.write("")
+            if st.button(f"📍 確認觀測：{clean_c} {clean_t}", use_container_width=True, type="primary"):
+                coords = cities_dict[sel_city]
+                st.session_state.active_target = {
+                    "name": f"📍 {clean_c} {clean_t}",
+                    "lat": float(coords[0]),
+                    "lon": float(coords[1])
+                }
+                st.rerun()
 
 if dialog_decorator:
     @dialog_decorator("🧭 選擇觀測地區")
@@ -871,7 +839,6 @@ else:
 # -------------------------------------------------------------
 st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 
-# 判斷當前是否正處於設備所在真實位置
 is_at_home = (
     abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
     abs(st.session_state.active_target["lon"] - st.session_state.my_home_location["lon"]) < 0.001
@@ -880,7 +847,6 @@ is_at_home = (
 c_home_tab, c_other_tab = st.columns(2)
 
 with c_home_tab:
-    # 點擊回到設備定位
     btn_type = "primary" if is_at_home else "secondary"
     if st.button("📍 目前位置", use_container_width=True, type=btn_type, key="btn_nav_home"):
         st.session_state.active_target = {
@@ -891,7 +857,6 @@ with c_home_tab:
         st.rerun()
 
 with c_other_tab:
-    # 點擊跳出想查詢地點的提示彈窗
     btn_type = "secondary" if is_at_home else "primary"
     if st.button("🌍 其他地區", use_container_width=True, type=btn_type, key="btn_nav_other"):
         open_location_dialog()
