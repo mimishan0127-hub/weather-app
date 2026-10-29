@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 import folium
 from streamlit_folium import st_folium
@@ -23,21 +24,37 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 徹底隱藏 Streamlit 內建頂部導航列 (Share, Star, GitHub, 選單、頁尾等) */
+    /* 1. 徹底隱藏頂部工具列 (Share, Star, GitHub, 選單) 與 頁尾 */
     header[data-testid="stHeader"],
     [data-testid="stHeader"],
     [data-testid="stToolbar"],
     .stAppDeployButton,
     #MainMenu,
-    footer {
+    footer,
+    /* 2. 徹底隱藏右下角「Hosted with Streamlit」紅色皇冠、作者頭像與管理按鈕 */
+    [data-testid="stStatusWidget"],
+    [data-testid="manage-app-button"],
+    #manage-app-button,
+    .viewerBadge_container__1QSob,
+    .styles_viewerBadge__1yB5_,
+    .viewerBadge_link__1S137,
+    .viewerBadge_text__1JaDK,
+    div[class*="viewerBadge"],
+    div[class*="StatusWidget"],
+    div[class*="Profile"],
+    a[href*="streamlit.io"],
+    a[href*="streamlit.app"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
-        padding: 0 !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
         margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 2. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
+    /* 3. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -48,7 +65,7 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* 3. 邊距極致適配 */
+    /* 4. 邊距極致適配 */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -64,7 +81,7 @@ st.markdown("""
         }
     }
 
-    /* 4. 頂部 App 品牌標題 */
+    /* 5. 頂部 App 品牌標題 */
     .app-brand-title {
         font-size: 20px;
         font-weight: 800;
@@ -77,7 +94,7 @@ st.markdown("""
         letter-spacing: -0.3px;
     }
 
-    /* 5. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
+    /* 6. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
     div[data-testid="stHorizontalBlock"]:first-of-type {
         background-color: #e2e8f0 !important;
         padding: 4px !important;
@@ -123,7 +140,7 @@ st.markdown("""
         color: #334155 !important;
     }
 
-    /* 6. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 7. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -172,7 +189,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* 橫向滑動預報卡片流 (12小時滑動展示) */
+    /* 橫向滑動預報卡片流 (12小時展示) */
     .weather-scroll-row {
         display: flex;
         gap: 10px;
@@ -210,7 +227,7 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
 
-    /* 7. AI 12小時變化洞察卡片樣式 */
+    /* 8. AI 12小時變化洞察卡片樣式 */
     .ai-summary-card {
         background: #ffffff;
         border: 1px solid #e0f2fe;
@@ -279,7 +296,43 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
+# 2. JavaScript 穿透外層 DOM 移除浮水印與管理按鈕
+# -------------------------------------------------------------
+components.html("""
+<script>
+    const removeStreamlitBadges = () => {
+        try {
+            const targetDoc = window.parent.document || window.top.document;
+            if (targetDoc) {
+                const selectors = [
+                    '[class*="viewerBadge"]',
+                    '[data-testid="stStatusWidget"]',
+                    '[data-testid="manage-app-button"]',
+                    '#manage-app-button',
+                    'a[href*="streamlit.io"]',
+                    'a[href*="streamlit.app"]'
+                ];
+                selectors.forEach(selector => {
+                    const elements = targetDoc.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.opacity = '0';
+                        el.style.pointerEvents = 'none';
+                    });
+                });
+            }
+        } catch (e) {
+            // 忽略跨來源警告
+        }
+    };
+    removeStreamlitBadges();
+    setInterval(removeStreamlitBadges, 800);
+</script>
+""", height=0, width=0)
+
+# -------------------------------------------------------------
+# 3. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -445,7 +498,7 @@ BUILTIN_TAIWAN_DATA = {
 }
 
 # -------------------------------------------------------------
-# 3. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
+# 4. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
 # -------------------------------------------------------------
 def parse_xlsx_without_packages(filename):
     with zipfile.ZipFile(filename, 'r') as z:
@@ -560,11 +613,10 @@ def load_all_cities_hierarchy():
         }
     }
 
-# 雙向函式別名綁定，徹底杜絕 NameError
 load_world_cities_hierarchy = load_all_cities_hierarchy
 
 # -------------------------------------------------------------
-# 4. 資料庫整合：自動合併試算表與臺灣完整座標
+# 5. 資料庫整合：自動合併試算表與臺灣完整座標
 # -------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def get_taiwan_and_search_index():
@@ -587,7 +639,7 @@ def get_taiwan_and_search_index():
     return taiwan_data, hierarchy
 
 # -------------------------------------------------------------
-# 5. 氣候與空氣品質 API
+# 6. 氣候與空氣品質 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -621,7 +673,6 @@ def parse_uv_level(uv_val: float):
     else:
         return "危險", "紫外線極強，請多留在室內陰涼處。"
 
-# 智慧動態高質感深藍背景引擎
 def get_weather_hero_style(code: int, temp: float):
     if code in [0, 1]:
         return (
@@ -692,7 +743,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 6. 生活管家決策引擎
+# 7. 生活管家決策引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
@@ -785,7 +836,7 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 7. AI 12小時氣象洞察分析引擎
+# 8. AI 12小時氣象洞察分析引擎
 # -------------------------------------------------------------
 def generate_12h_ai_summary(times, temps, rains, codes):
     if not times:
@@ -803,7 +854,6 @@ def generate_12h_ai_summary(times, temps, rains, codes):
     max_r_idx = rains.index(max_r)
     max_r_time = times[max_r_idx]
 
-    # 分析氣溫走向
     start_t = temps[0]
     end_t = temps[-1]
     if end_t - start_t >= 2.5:
@@ -813,7 +863,6 @@ def generate_12h_ai_summary(times, temps, rains, codes):
     else:
         t_trend_desc = "氣溫起伏相對平緩穩健"
 
-    # 分析降雨走向與時段
     rainy_hours = [times[i] for i, r in enumerate(rains) if r >= 40]
     if rainy_hours:
         rain_desc = f"預計在 <strong>{', '.join(rainy_hours[:3])}</strong> 等時段降雨機率顯著增高（最高達 <strong>{max_r}%</strong> 出現在 {max_r_time}），出門請務必攜帶雨具備用。"
@@ -822,7 +871,6 @@ def generate_12h_ai_summary(times, temps, rains, codes):
     else:
         rain_desc = f"未來 12 小時天候乾爽穩定，最高降雨機率僅 <strong>{max_r}%</strong>，外出無需擔心降雨打擾。"
 
-    # 針對性生活建議
     advice_list = []
     if temp_range >= 5:
         advice_list.append(f"早晚/日夜溫差達 {temp_range}°C，建議採洋蔥式穿搭並隨身攜帶薄外套")
@@ -861,7 +909,7 @@ def generate_12h_ai_summary(times, temps, rains, codes):
     return summary_html
 
 # -------------------------------------------------------------
-# 8. 所在地狀態持久化
+# 9. 所在地狀態持久化
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -890,7 +938,7 @@ if "active_target" not in st.session_state:
 taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 9. 純粹直覺的階層式選擇視窗 (無手動輸入、無推薦標籤，純粹分類挑選)
+# 10. 純粹直覺的階層式選擇視窗
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -961,7 +1009,7 @@ else:
         render_location_dialog_content()
 
 # -------------------------------------------------------------
-# 10. 頂部地點切換膠囊 (目前位置 vs 其他地區)
+# 11. 頂部地點切換膠囊 (目前位置 vs 其他地區)
 # -------------------------------------------------------------
 st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 
@@ -988,7 +1036,7 @@ with c_other_tab:
         open_location_dialog()
 
 # -------------------------------------------------------------
-# 11. 天氣資料獲取與運算 (擴充為 12 小時)
+# 12. 天氣資料獲取與運算 (12 小時預報)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -1019,7 +1067,6 @@ raw_temps = hourly.get("temperature_2m", [])
 raw_rains = hourly.get("precipitation_probability", [])
 raw_codes = hourly.get("weather_code", [])
 
-# 將預報長度從 6 小時升級為 12 小時
 limit_h = min(12, len(raw_times), len(raw_temps), len(raw_rains), len(raw_codes))
 times = [raw_times[i].split("T")[1] for i in range(limit_h)] if limit_h > 0 else []
 temps = [raw_temps[i] for i in range(limit_h)] if limit_h > 0 else []
@@ -1041,7 +1088,6 @@ aqi_current = aqi_data.get("current", {})
 aqi_val = int(aqi_current.get("us_aqi", 35)) if aqi_current.get("us_aqi") is not None else 35
 pm25_val = aqi_current.get("pm2_5", 8.5)
 
-# 取得自適應高質感深藍漸層樣式
 hero_card_style = get_weather_hero_style(cur_code, cur_temp)
 
 intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_status_str = get_comprehensive_assistant_advice(
@@ -1049,7 +1095,7 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 12. 【核心焦點】自適應高質感動態深藍氣象大卡片
+# 13. 【核心焦點】自適應高質感動態深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -1100,7 +1146,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 13. 【生活小幫手】(預設收折，整齊俐落)
+# 14. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1121,12 +1167,11 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 【升級重點】未來 12 小時即時預報與 AI 變化洞察
+# 15. 未來 12 小時即時預報與 AI 變化趨勢
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 12 小時即時預報與 AI 變化趨勢")
 
 if limit_h > 0:
-    # 12 小時橫向滑動預報卡片
     hourly_cards = []
     for i in range(limit_h):
         h_icon, _ = resolve_weather(codes[i])
@@ -1142,7 +1187,6 @@ if limit_h > 0:
 
     st.markdown(f'<div class="weather-scroll-row">{"".join(hourly_cards)}</div>', unsafe_allow_html=True)
 
-    # 左右並列排版：左側為 12 小時走勢圖，右側為 AI 12小時變化洞察卡
     col_chart, col_ai = st.columns([1.1, 1.0], gap="medium")
 
     with col_chart:
@@ -1162,7 +1206,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 未來一週 (7天) 展望
+# 16. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1196,7 +1240,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 16. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
+# 17. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
