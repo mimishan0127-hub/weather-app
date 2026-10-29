@@ -390,92 +390,84 @@ def fetch_weather_and_aqi(lat: float, lon: float):
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
 
-    diff = round(feels_like - temp, 1)
-    if abs(diff) >= 3.0:
-        if diff > 0:
-            diff_note = f"（因濕度偏高，體感比實際溫度高出 {abs(diff)}°C，悶熱感更顯著）"
-        else:
-            diff_note = f"（受風速/蒸發效應影響，體感比實際低 {abs(diff)}°C，風寒感受更明顯）"
-    else:
-        diff_note = ""
-
     if rain_prob >= 60:
-        intro_text = f"有雨路滑（體感 {feels_like}°C{diff_note}），出門請隨身攜帶雨具、放慢車速。"
+        intro_text = f"有雨路滑(體感 {feels_like}°C),出門請隨身攜帶雨具、放慢車速。"
     elif uv_val >= 8:
-        intro_text = f"紫外線偏強（UV {uv_val:.1f}），外出請務必做好防曬並多補充水分。"
+        intro_text = f"紫外線偏強(UV {uv_val:.1f}),外出請務必防曬防曬傷並多補充水分。"
     elif temp >= 29:
-        intro_text = f"體感偏熱（體感 {feels_like}°C{diff_note}），請多喝水預防中暑，待陰涼通風處。"
+        intro_text = f"體感偏熱({feels_like}°C),請多喝水預防中暑,待陰涼通風處。"
     elif temp <= 18:
-        intro_text = f"天氣偏涼（體感 {feels_like}°C{diff_note}），早晚溫差顯著，出門請搭配洋蔥式保暖。"
+        intro_text = f"天氣偏涼(體感 {feels_like}°C),早晚溫差顯著,出門請搭配洋蔥式保暖。"
     else:
-        intro_text = f"氣候舒適宜人（體感 {feels_like}°C{diff_note}），適宜外出踏青散心或戶外活動。"
+        intro_text = f"氣候舒適宜人(體感 {feels_like}°C),適宜外出踏青散心或戶外活動。"
 
-    ref_temp = feels_like
-    if ref_temp >= 28:
-        wear_headline = "舒適短袖 / 透氣薄襯衫"
+    if temp >= 28:
+        wear_headline = "舒適短袖 / 薄襯衫"
         wear_desc = f"""
-        * **日間穿著**：透氣吸汗短袖或棉麻寬鬆上衣。
-        * **防曬提醒**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），{uv_tip}
-        * **室內溫差**：室內外溫差常達 5°C 以上，建議備薄開襟衫防冷氣著涼。
+        * **日間穿著**:透氣吸汗短袖或棉麻寬鬆上衣。
+        * **防曬提醒**:紫外線為 **{uv_status}**(指數 {uv_val:.1f}),{uv_tip}
+        * **室內溫差**:室內外溫差常達 5°C 以上,建議備薄開襟衫防冷氣著涼。
         """
-    elif 21 <= ref_temp < 28:
-        wear_headline = "舒適短袖 / 襯衫 + 薄外套備用"
+    elif 21 <= temp < 28:
+        wear_headline = "舒適短袖 / 襯衫 + 薄外套"
         wear_desc = f"""
-        * **日間穿著**：純棉 T-shirt、薄長袖或休閒襯衫剛剛好。
-        * **防曬提醒**：紫外線為 **{uv_status}**（指數 {uv_val:.1f}），請適度防曬。
-        * **早晚應對**：早晚日夜溫差約 3~6°C，建議隨身攜帶薄夾克或風衣。
+        * **日間穿著**:純棉 T-shirt、薄長袖或休閒襯衫剛剛好。
+        * **防曬提醒**:紫外線為 **{uv_status}**(指數 {uv_val:.1f}),請適度防曬。
+        * **早晚應對**:早晚日夜溫差約 3~6°C,建議攜帶薄夾克或風衣。
         """
     else:
         wear_headline = "洋蔥式保暖 + 厚外套/風衣"
         wear_desc = f"""
-        * **內層保暖**：棉質長袖或輕量發熱衣鎖住核心體溫。
-        * **外層禦寒**：搭配防風外套、羊毛大衣或羽絨背心。
-        * **防風配件**：步行或騎車配戴防風圍巾降低體感寒意。
+        * **內層保暖**:棉質長袖或輕量發熱衣鎖住核心體溫。
+        * **外層禦寒**:搭配防風外套、羊毛大衣或羽絨背心。
+        * **防風配件**:步行或騎車配戴防風圍巾降低體感寒意。
         """
 
     if rain_prob < 30 and humidity < 75:
-        dry_headline = "五星推薦：通風良好，戶外速乾！"
+        dry_headline = "五星推薦:通風良好,戶外速乾!"
         dry_desc = f"""
-        * **晾乾速度**：環境濕度僅 {humidity}%，通風充足，衣物約 2.5~3 小時即可乾燥。
-        * **推薦清洗**：床單、被套等難乾大件物品請把握今日！
+        * **晾乾速度**:環境濕度僅 {humidity}%,通風充足,衣物約 2.5~3 小時即可乾燥。
+        * **推薦清洗**:床單、被套等難乾大件物品請把握今日!
         """
     elif rain_prob >= 50 or humidity >= 80:
-        dry_headline = "不建議室外（建議搭配除濕機）"
+        dry_headline = "不建議室外(建議搭配除濕機)"
         dry_desc = f"""
-        * **受潮風險**：降雨機率高達 {rain_prob}%，空氣濕度飽和，室外晾掛易吸附潮氣。
-        * **解決方式**：改掛於室內通風處，搭配除濕機或低溫烘乾。
+        * **受潮風險**:降雨機率高達 {rain_prob}%,空氣濕度飽和,室外晾掛易吸附潮氣。
+        * **解決方式**:改掛於室內通風處,搭配除濕機或低溫烘乾。
         """
     else:
-        dry_headline = "陽台陰乾為佳，留意天氣突變"
+        dry_headline = "陽台陰乾為佳,留意天氣突變"
         dry_desc = f"""
-        * **曬衣處選擇**：請掛於有遮棚陽台，並於傍晚日落前收納入室避免返潮。
+        * **曬衣處選擇**:請掛於有遮棚陽台,並於傍晚日落前收納入室避免返潮。
         """
 
     if rain_prob >= 50:
-        commute_tip = "路面潮濕易打滑，行經標線水溝蓋請減速；建議攜帶防水雨具。"
-        sport_status = "戶外濕滑易雨，建議改至室內伸展或健身訓練。"
+        commute_tip = "路面潮濕易打滑,行經標線水溝蓋請減速;建議攜帶防水雨具。"
+        sport_status = "戶外濕滑易雨,建議改至室內伸展或健身訓練。"
     elif wind_speed > 20:
-        commute_tip = "陣風偏大，行經橋樑空曠路段請注意車身穩定與車距。"
-        sport_status = "風力稍大，不宜羽球等球類運動，慢跑請留意風阻。"
+        commute_tip = "陣風偏大,行經橋樑空曠路段請注意車身穩定與車距。"
+        sport_status = "風力稍大,不宜羽球等球類運動,慢跑請留意風阻。"
     else:
-        commute_tip = "天候晴朗乾燥，視線良好，各類通勤出行均非常順暢安全。"
-        sport_status = "氣候舒適，非常適合慢跑、散步或單車騎乘。"
+        commute_tip = "天候晴朗乾燥,視線良好,各類通勤出行均非常順暢安全。"
+        sport_status = "氣候舒適,非常適合慢跑、散步或單車騎乘。"
 
+    # 這裡變數是 pack_items
     pack_items = []
     if rain_prob >= 40:
         pack_items.append("🌂 折疊雨傘 / 輕便雨具")
     if uv_val >= 6:
-        pack_items.append("🧴 防曬乳 (SPF30+) / 抗 UV 傘")
+        pack_items.append(f"🧴 防曬乳 (SPF30+) / 抗 UV 傘")
     if temp >= 28:
-        pack_items.append("💧 環保水瓶（防熱補水）")
+        pack_items.append("💧 環保水瓶(防熱補水)")
     if aqi_val > 90:
         pack_items.append("😷 醫療級防護口罩")
     if temp <= 22 or wind_speed > 18:
         pack_items.append("🧥 隨身防風薄外套")
     if not pack_items:
-        pack_items.append("😊 輕鬆好心情即可輕便出門！")
+        pack_items.append("😊 輕鬆好心情即可輕便出門!")
 
-    return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_list, uv_status
+    # 注意第 8 個回傳值必須是 pack_items
+    return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
 # 6. 所在地狀態持久化
