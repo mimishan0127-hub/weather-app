@@ -172,7 +172,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* 橫向滑動預報卡片流 */
+    /* 橫向滑動預報卡片流 (12小時滑動展示) */
     .weather-scroll-row {
         display: flex;
         gap: 10px;
@@ -208,6 +208,43 @@ st.markdown("""
         padding: 14px 8px;
         text-align: center;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    /* 7. AI 12小時變化洞察卡片樣式 */
+    .ai-summary-card {
+        background: #ffffff;
+        border: 1px solid #e0f2fe;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.06);
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+    .ai-summary-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+        border-bottom: 1px dashed #bae6fd;
+    }
+    .ai-summary-body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: #334155;
+    }
+    .ai-summary-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .ai-item-icon {
+        font-size: 15px;
+        flex-shrink: 0;
+        margin-top: 2px;
     }
 
     .map-frame-container {
@@ -748,7 +785,83 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 7. 所在地狀態持久化
+# 7. AI 12小時氣象洞察分析引擎
+# -------------------------------------------------------------
+def generate_12h_ai_summary(times, temps, rains, codes):
+    if not times:
+        return "暫無足夠預報數據可供分析。"
+
+    max_t = max(temps)
+    min_t = min(temps)
+    max_t_idx = temps.index(max_t)
+    min_t_idx = temps.index(min_t)
+    max_t_time = times[max_t_idx]
+    min_t_time = times[min_t_idx]
+    temp_range = round(max_t - min_t, 1)
+
+    max_r = max(rains)
+    max_r_idx = rains.index(max_r)
+    max_r_time = times[max_r_idx]
+
+    # 分析氣溫走向
+    start_t = temps[0]
+    end_t = temps[-1]
+    if end_t - start_t >= 2.5:
+        t_trend_desc = f"氣溫呈現明顯回升趨勢（溫差攀升約 {round(end_t - start_t, 1)}°C）"
+    elif start_t - end_t >= 2.5:
+        t_trend_desc = f"氣溫將逐漸下滑轉涼（預估降幅達 {round(start_t - end_t, 1)}°C）"
+    else:
+        t_trend_desc = "氣溫起伏相對平緩穩健"
+
+    # 分析降雨走向與時段
+    rainy_hours = [times[i] for i, r in enumerate(rains) if r >= 40]
+    if rainy_hours:
+        rain_desc = f"預計在 <strong>{', '.join(rainy_hours[:3])}</strong> 等時段降雨機率顯著增高（最高達 <strong>{max_r}%</strong> 出現在 {max_r_time}），出門請務必攜帶雨具備用。"
+    elif max_r >= 25:
+        rain_desc = f"降雨機率最高約 <strong>{max_r}%</strong>（約 {max_r_time}），雲量偏多偶有微雨，天色稍陰但影響不大。"
+    else:
+        rain_desc = f"未來 12 小時天候乾爽穩定，最高降雨機率僅 <strong>{max_r}%</strong>，外出無需擔心降雨打擾。"
+
+    # 針對性生活建議
+    advice_list = []
+    if temp_range >= 5:
+        advice_list.append(f"早晚/日夜溫差達 {temp_range}°C，建議採洋蔥式穿搭並隨身攜帶薄外套")
+    if max_r >= 40:
+        advice_list.append("路面潮濕易打滑，行經標線或水溝蓋請減速慢行")
+    if max_t >= 30:
+        advice_list.append(f"午後最高溫達 {max_t:.1f}°C，戶外請加強防曬並適時補充水分")
+    elif min_t <= 18:
+        advice_list.append(f"最低溫觸及 {min_t:.1f}°C，夜間微涼出門請加強防風保暖")
+
+    if not advice_list:
+        advice_list.append("氣候舒適平穩，非常適宜各項戶外休閒散步或公務出行")
+
+    summary_html = f"""
+    <div class="ai-summary-card">
+        <div class="ai-summary-header">
+            <span style="font-size: 17px;">🤖</span>
+            <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
+        </div>
+        <div class="ai-summary-body">
+            <div class="ai-summary-item">
+                <span class="ai-item-icon">🌡️</span>
+                <div><strong>氣溫起伏：</strong>未來 12 小時預估在 <strong>{min_t:.1f}°C ~ {max_t:.1f}°C</strong> 之間波動，高溫落在 {max_t_time}，低溫在 {min_t_time}，{t_trend_desc}。</div>
+            </div>
+            <div class="ai-summary-item">
+                <span class="ai-item-icon">💧</span>
+                <div><strong>降雨走向：</strong>{rain_desc}</div>
+            </div>
+            <div class="ai-summary-item">
+                <span class="ai-item-icon">💡</span>
+                <div><strong>即時建議：</strong>{'；'.join(advice_list)}。</div>
+            </div>
+        </div>
+    </div>
+    """
+    return summary_html
+
+# -------------------------------------------------------------
+# 8. 所在地狀態持久化
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -774,11 +887,10 @@ if "active_target" not in st.session_state:
         "lon": float(st.session_state.my_home_location["lon"])
     }
 
-# 取得臺灣鄉鎮與全球階層資料庫
 taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 8. 純粹直覺的階層式選擇視窗 (無手動輸入、無推薦標籤，純粹分類挑選)
+# 9. 純粹直覺的階層式選擇視窗 (無手動輸入、無推薦標籤，純粹分類挑選)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -849,7 +961,7 @@ else:
         render_location_dialog_content()
 
 # -------------------------------------------------------------
-# 9. 頂部地點切換膠囊 (目前位置 vs 其他地區)
+# 10. 頂部地點切換膠囊 (目前位置 vs 其他地區)
 # -------------------------------------------------------------
 st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 
@@ -876,7 +988,7 @@ with c_other_tab:
         open_location_dialog()
 
 # -------------------------------------------------------------
-# 10. 天氣資料獲取與運算
+# 11. 天氣資料獲取與運算 (擴充為 12 小時)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -907,7 +1019,8 @@ raw_temps = hourly.get("temperature_2m", [])
 raw_rains = hourly.get("precipitation_probability", [])
 raw_codes = hourly.get("weather_code", [])
 
-limit_h = min(6, len(raw_times), len(raw_temps), len(raw_rains), len(raw_codes))
+# 將預報長度從 6 小時升級為 12 小時
+limit_h = min(12, len(raw_times), len(raw_temps), len(raw_rains), len(raw_codes))
 times = [raw_times[i].split("T")[1] for i in range(limit_h)] if limit_h > 0 else []
 temps = [raw_temps[i] for i in range(limit_h)] if limit_h > 0 else []
 rains = [raw_rains[i] for i in range(limit_h)] if limit_h > 0 else []
@@ -936,7 +1049,7 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 11. 【核心焦點】自適應高質感動態深藍氣象大卡片
+# 12. 【核心焦點】自適應高質感動態深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -987,7 +1100,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 12. 【生活小幫手】(預設收折，整齊俐落)
+# 13. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1008,11 +1121,12 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報趨勢
+# 14. 【升級重點】未來 12 小時即時預報與 AI 變化洞察
 # -------------------------------------------------------------
-st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
+st.markdown("##### ⏱️ 未來 12 小時即時預報與 AI 變化趨勢")
 
 if limit_h > 0:
+    # 12 小時橫向滑動預報卡片
     hourly_cards = []
     for i in range(limit_h):
         h_icon, _ = resolve_weather(codes[i])
@@ -1028,19 +1142,27 @@ if limit_h > 0:
 
     st.markdown(f'<div class="weather-scroll-row">{"".join(hourly_cards)}</div>', unsafe_allow_html=True)
 
-    chart_data = pd.DataFrame({
-        "時間": times,
-        "氣溫 (°C)": temps,
-        "降雨機率 (%)": rains
-    }).set_index("時間")
-    st.line_chart(chart_data, height=160)
+    # 左右並列排版：左側為 12 小時走勢圖，右側為 AI 12小時變化洞察卡
+    col_chart, col_ai = st.columns([1.1, 1.0], gap="medium")
+
+    with col_chart:
+        chart_data = pd.DataFrame({
+            "時間": times,
+            "氣溫 (°C)": temps,
+            "降雨機率 (%)": rains
+        }).set_index("時間")
+        st.line_chart(chart_data, height=195)
+
+    with col_ai:
+        ai_summary_html = generate_12h_ai_summary(times, temps, rains, codes)
+        st.markdown(ai_summary_html, unsafe_allow_html=True)
 else:
     st.info("ℹ️ 暫時無法取得每小時即時氣象資料。")
 
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望
+# 15. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1074,7 +1196,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
+# 16. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
