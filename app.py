@@ -51,71 +51,40 @@ st.markdown("""
             padding-left: 0.65rem !important;
             padding-right: 0.65rem !important;
         }
-
-        /* 頂部單行佈局鎖定 */
-        div[data-testid="stHorizontalBlock"]:first-of-type {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            gap: 6px !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin-bottom: 4px !important;
-        }
-
-        /* 覆蓋 Streamlit 手機端的 min-width: 100% 限制 */
-        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"] {
-            width: auto !important;
-            min-width: 0 !important;
-            max-width: none !important;
-            padding: 0 !important;
-        }
-
-        /* 左側品牌名稱 */
-        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(1) {
-            flex: 1 1 auto !important;
-        }
-
-        /* 右側 🔍 放大鏡按鈕欄位 */
-        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(2) {
-            flex: 0 0 40px !important;
-            width: 40px !important;
-        }
-
-        /* 右側 📍 圖釘按鈕欄位 */
-        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(3) {
-            flex: 0 0 40px !important;
-            width: 40px !important;
-        }
     }
 
-    /* 頂部精巧圓形圖標按鈕 (放大鏡與圖釘) */
-    div[data-testid="stHorizontalBlock"]:first-of-type button {
-        width: 38px !important;
-        height: 38px !important;
-        min-width: 38px !important;
-        min-height: 38px !important;
-        padding: 0 !important;
-        border-radius: 50% !important;
-        border: 1px solid #cbd5e1 !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    /* 3. 頂部地點控制「小分頁」質感設計 (iOS Segmented Control 質感) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px !important;
+        background-color: #f1f5f9 !important;
+        padding: 4px !important;
+        border-radius: 14px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 1 0% !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+        padding: 0 10px !important;
+        background-color: transparent !important;
+        border: none !important;
         display: flex !important;
-        align-items: center !important;
         justify-content: center !important;
+        align-items: center !important;
         transition: all 0.2s ease !important;
     }
-    div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
-        border-color: #0284c7 !important;
-        background-color: #f0f9ff !important;
-        transform: translateY(-1px);
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #0284c7 !important;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06) !important;
     }
-    div[data-testid="stHorizontalBlock"]:first-of-type button p {
-        font-size: 16px !important;
-        margin: 0 !important;
-        line-height: 1 !important;
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
     }
 
     .app-brand-title {
@@ -126,11 +95,12 @@ st.markdown("""
         display: flex;
         align-items: center;
         letter-spacing: -0.3px;
+        margin-bottom: 6px;
     }
 
-    /* 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 4. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
-        padding: 20px 22px;
+        padding: 22px 24px;
         border-radius: 20px;
         color: white;
         margin-top: 4px;
@@ -141,7 +111,7 @@ st.markdown("""
     }
     @media (max-width: 768px) {
         .weather-hero-card {
-            padding: 16px 14px;
+            padding: 18px 16px;
             border-radius: 16px;
         }
     }
@@ -246,7 +216,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定定位庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -791,130 +761,80 @@ if "active_target" not in st.session_state:
         "lon": float(st.session_state.my_home_location["lon"])
     }
 
+taiwan_data, flattened_index = get_taiwan_and_search_index()
+world_hierarchy = load_all_cities_hierarchy()
+
 # -------------------------------------------------------------
-# 8. 選擇觀測地區彈窗
+# 8. 頂部導航與「小分頁」地點控制系統 (100% 寬度自適應防溢出)
 # -------------------------------------------------------------
-dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
+st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 
-def render_selector_body():
-    taiwan_data, flattened_index = get_taiwan_and_search_index()
-    world_hierarchy = load_all_cities_hierarchy()
+# 依使用者需求，以「小分頁」完美替代原本會跑出螢幕外的按鈕
+tab_search, tab_gps = st.tabs(["🔍 搜尋與切換地點", "📍 回到目前設備定位"])
 
-    tab_search, tab_tw, tab_world = st.tabs(["🔍 關鍵字快搜", "🇹🇼 臺灣鄉鎮", "🌍 全球城市"])
-
-    with tab_search:
-        search_query = st.text_input("🔍 地名關鍵字搜尋 (例如: 板橋、東勢、新宿、巴黎)", placeholder="請輸入地名...")
-        if search_query.strip():
-            q = search_query.strip().lower()
-            matched = [item for item in flattened_index if q in item[0].lower()]
-            
-            if matched:
-                st.caption(f"找到 {len(matched)} 個相符地點（點擊直接切換）：")
-                for name, lat, lon in matched[:10]:
-                    clean_name = name.replace("🇹🇼 ", "").replace("🌍 ", "")
-                    if st.button(f"📍 {name}", key=f"btn_s_{clean_name}_{lat}_{lon}", use_container_width=True):
+with tab_search:
+    search_query = st.text_input("輸入地名關鍵字 (例如: 東勢、板橋、新宿、巴黎、London)", placeholder="請輸入地名...", key="main_search_input")
+    if search_query.strip():
+        q = search_query.strip().lower()
+        matched = [item for item in flattened_index if q in item[0].lower()]
+        if matched:
+            st.caption(f"找到 {len(matched)} 個相符地點（點擊直接切換）：")
+            cols = st.columns(2)
+            for idx, (name, lat, lon) in enumerate(matched[:8]):
+                clean_name = name.replace("🇹🇼 ", "").replace("🌍 ", "")
+                with cols[idx % 2]:
+                    if st.button(f"📍 {name}", key=f"s_btn_{clean_name}_{lat}_{lon}", use_container_width=True):
                         st.session_state.active_target = {
                             "name": f"📍 {clean_name}",
                             "lat": float(lat),
                             "lon": float(lon)
                         }
                         st.rerun()
-            else:
-                st.info("查無符合地點，請嘗試輸入其他關鍵字或至分類標籤點選。")
         else:
-            st.caption("💡 提示：輸入臺灣鄉鎮（例：淡水、東勢、鹿港）或全球城市（例：首爾、紐約）即可一鍵定位。")
-
-    with tab_tw:
-        st.markdown("##### 🇹🇼 臺灣縣市與鄉鎮市區點選")
-        county_list = list(taiwan_data.keys())
-        if county_list:
-            default_county_idx = county_list.index("臺中市") if "臺中市" in county_list else 0
-            selected_county = st.selectbox("1. 選擇縣市", options=county_list, index=default_county_idx)
+            st.info("查無符合地點，請嘗試其他關鍵字或至下方選單點選。")
             
-            town_dict = taiwan_data.get(selected_county, {})
-            town_list = list(town_dict.keys())
-            default_town_idx = town_list.index("東勢區") if "東勢區" in town_list else 0
-            selected_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=default_town_idx if town_list else 0)
-            
-            if selected_town:
-                target_coords = town_dict[selected_town]
-                full_name = f"臺灣 {selected_county} {selected_town}"
-                
-                st.write("")
-                if st.button(f"📍 確認定位: {full_name}", use_container_width=True, type="primary"):
+    with st.expander("📂 臺灣縣市鄉鎮 / 全球大洲城市 分類點選", expanded=False):
+        c_sub1, c_sub2 = st.columns(2)
+        with c_sub1:
+            st.markdown("###### 🇹🇼 臺灣鄉鎮")
+            county_list = list(taiwan_data.keys())
+            if county_list:
+                sel_county = st.selectbox("選擇縣市", options=county_list, index=0, key="sb_county")
+                t_list = list(taiwan_data.get(sel_county, {}).keys())
+                sel_town = st.selectbox("選擇鄉鎮市區", options=t_list, index=0, key="sb_town")
+                if st.button(f"📍 定位至 {sel_county} {sel_town}", use_container_width=True, key="btn_tw_confirm"):
+                    coords = taiwan_data[sel_county][sel_town]
                     st.session_state.active_target = {
-                        "name": f"📍 {full_name}",
-                        "lat": float(target_coords[0]),
-                        "lon": float(target_coords[1])
+                        "name": f"📍 臺灣 {sel_county} {sel_town}",
+                        "lat": float(coords[0]),
+                        "lon": float(coords[1])
+                    }
+                    st.rerun()
+        with c_sub2:
+            st.markdown("###### 🌍 全球城市")
+            cont_list = list(world_hierarchy.keys())
+            if cont_list:
+                sel_cont = st.selectbox("選擇大洲", options=cont_list, index=0, key="sb_cont")
+                c_dict = world_hierarchy.get(sel_cont, {})
+                country_list = sorted(list(c_dict.keys()))
+                sel_country = st.selectbox("選擇國家", options=country_list, index=0 if country_list else None, key="sb_country")
+                city_dict = c_dict.get(sel_country, {}) if sel_country else {}
+                city_list = list(city_dict.keys())
+                sel_city = st.selectbox("選擇城市", options=city_list, index=0 if city_list else None, key="sb_city")
+                if sel_city and st.button(f"📍 定位至 {sel_city.split('(')[0]}", use_container_width=True, key="btn_world_confirm"):
+                    coords = city_dict[sel_city]
+                    clean_c = sel_country.split('/')[0].strip() if sel_country else ""
+                    clean_t = sel_city.split('(')[0].strip()
+                    st.session_state.active_target = {
+                        "name": f"📍 {clean_c} {clean_t}",
+                        "lat": float(coords[0]),
+                        "lon": float(coords[1])
                     }
                     st.rerun()
 
-    with tab_world:
-        st.markdown("##### 🌍 全球大洲、國家與世界城市點選")
-        continents = list(world_hierarchy.keys())
-        default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
-        selected_continent = st.selectbox("1. 選擇大洲", options=continents, index=default_cont_idx)
-        
-        countries_dict = world_hierarchy.get(selected_continent, {})
-        country_list = sorted(list(countries_dict.keys()))
-        selected_country = st.selectbox("2. 選擇國家", options=country_list, index=0 if country_list else None)
-        
-        cities_dict = countries_dict.get(selected_country, {}) if selected_country else {}
-        city_list = list(cities_dict.keys())
-        selected_city = st.selectbox(
-            f"3. 選擇城市 (共 {len(city_list)} 個城市)", 
-            options=city_list, 
-            index=0 if city_list else None
-        )
-        
-        if selected_city:
-            target_coords = cities_dict[selected_city]
-            clean_c = selected_country.split('/')[0].strip() if selected_country else ""
-            clean_t = selected_city.split('(')[0].strip()
-            full_name = f"{clean_c} {clean_t}"
-            
-            st.write("")
-            if st.button(f"📍 確認定位: {full_name}", use_container_width=True, type="primary"):
-                st.session_state.active_target = {
-                    "name": f"📍 {full_name}",
-                    "lat": float(target_coords[0]),
-                    "lon": float(target_coords[1])
-                }
-                st.rerun()
-
-if dialog_decorator:
-    @dialog_decorator("🧭 選擇觀測地區")
-    def show_cascading_selector_dialog():
-        render_selector_body()
-else:
-    def show_cascading_selector_dialog():
-        render_selector_body()
-
-# -------------------------------------------------------------
-# 9. 頂部導航列：改為「純圖標 🔍 放大鏡 + 📍 圖釘」(100% 絕對不超出版面)
-# -------------------------------------------------------------
-active_name = st.session_state.active_target["name"]
-active_lat = float(st.session_state.active_target["lat"])
-active_lon = float(st.session_state.active_target["lon"])
-
-# 提取乾淨地名以顯示於氣象大卡片內
-display_location_text = (
-    active_name.replace("📍 ", "")
-    .replace("目前所在地:", "")
-    .replace("臺灣 ", "")
-)
-
-c_logo, c_search_btn, c_home_btn = st.columns([4.0, 0.6, 0.6], gap="small")
-
-with c_logo:
-    st.markdown('<div class="app-brand-title">🌤️ SkyCast</div>', unsafe_allow_html=True)
-
-with c_search_btn:
-    if st.button("🔍", use_container_width=True, help="點擊搜尋或切換城市地區"):
-        show_cascading_selector_dialog()
-
-with c_home_btn:
-    if st.button("📍", use_container_width=True, help="一鍵回到目前設備所在真實位置"):
+with tab_gps:
+    st.caption(f"目前設備偵測位置：**{st.session_state.my_home_location['name']}**")
+    if st.button("🎯 一鍵切換回目前設備所在位置", use_container_width=True, type="primary", key="btn_gps_tab"):
         st.session_state.active_target = {
             "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
             "lat": float(st.session_state.my_home_location["lat"]),
@@ -923,8 +843,18 @@ with c_home_btn:
         st.rerun()
 
 # -------------------------------------------------------------
-# 10. 天氣資料獲取與運算
+# 9. 天氣資料獲取與運算
 # -------------------------------------------------------------
+active_name = st.session_state.active_target["name"]
+active_lat = float(st.session_state.active_target["lat"])
+active_lon = float(st.session_state.active_target["lon"])
+
+display_location_text = (
+    active_name.replace("📍 ", "")
+    .replace("目前所在地:", "")
+    .replace("臺灣 ", "")
+)
+
 weather_data, aqi_data = fetch_weather_and_aqi(active_lat, active_lon)
 
 current = weather_data.get("current", {})
@@ -973,7 +903,7 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 11. 【核心焦點】自適應高質感動態深藍氣象大卡片 (包含地名標示)
+# 10. 【核心焦點】自適應高質感動態深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -1024,7 +954,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 12. 【生活小幫手】(預設收折，整齊俐落)
+# 11. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1045,7 +975,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報趨勢
+# 12. 未來 6 小時即時預報趨勢
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -1077,7 +1007,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望
+# 13. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1111,7 +1041,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 地圖置底呈現 (動態 Key 確保切換鄉鎮即時瞬移置中)
+# 14. 地圖置底呈現 (強制鎖死 100% 寬度自適應)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
