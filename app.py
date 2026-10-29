@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與行動端極致響應式樣式
+# 1. 頁面全域配置與嚴密防橫向溢出樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -23,7 +23,11 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    html, body, [class*="css"] {
+    /* 徹底根除手機橫向滑動與破版 */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .main, .block-container {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         color: #1e293b;
     }
@@ -31,58 +35,74 @@ st.markdown("""
         background: transparent;
     }
 
-    /* 全局邊距與行動端深度優化 */
+    /* 手機邊距極致適配 */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
-
     @media (max-width: 768px) {
         .block-container {
             padding-top: 0.5rem !important;
             padding-bottom: 1.5rem !important;
-            padding-left: 0.65rem !important;
-            padding-right: 0.65rem !important;
+            padding-left: 0.6rem !important;
+            padding-right: 0.6rem !important;
         }
 
-        /* 強制頂部控制列在手機端保持單行橫向並列，嚴禁換行或變成巨大方塊 */
+        /* 強制頂部控制列在手機上單行排列，嚴禁溢出螢幕 */
         div[data-testid="stHorizontalBlock"]:first-of-type {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
+            justify-content: space-between !important;
             gap: 6px !important;
-            margin-bottom: 4px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-bottom: 6px !important;
         }
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(1) {
             flex: 0 0 auto !important;
             width: auto !important;
+            min-width: 0 !important;
         }
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(2) {
             flex: 1 1 auto !important;
             min-width: 0 !important;
+            overflow: hidden !important;
         }
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(3) {
             flex: 0 0 38px !important;
             width: 38px !important;
+            min-width: 38px !important;
         }
 
-        /* 手機端按鈕尺寸精緻化 */
+        /* 限制按鈕本體不向外撐大 */
         div[data-testid="stHorizontalBlock"]:first-of-type button {
             height: 36px !important;
             min-height: 36px !important;
-            padding: 0 10px !important;
-            font-size: 13px !important;
+            padding: 0 8px !important;
+            width: 100% !important;
             border-radius: 18px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        /* 限制按鈕內文字強制省略，絕對不超出按鈕框 */
+        div[data-testid="stHorizontalBlock"]:first-of-type button p,
+        div[data-testid="stHorizontalBlock"]:first-of-type button div {
+            font-size: 13px !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
+            margin: 0 !important;
+            width: 100% !important;
+            text-align: center !important;
         }
     }
 
-    /* 頂部地名膠囊按鈕質感 */
+    /* 頂部按鈕微質感 */
     div[data-testid="stHorizontalBlock"]:first-of-type button {
         border-radius: 20px;
         border: 1px solid #cbd5e1;
@@ -108,31 +128,33 @@ st.markdown("""
         letter-spacing: -0.3px;
     }
 
-    /* 原汁原味經典深藍色大卡片 (The Iconic Blue Hero Card) */
+    /* 質感動態天氣大卡片 (The Dynamic Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
         color: white;
-        margin-top: 6px;
-        margin-bottom: 14px;
-        box-shadow: 0 12px 28px -6px rgba(30, 58, 138, 0.28), 0 8px 12px -6px rgba(30, 58, 138, 0.16);
-        border: 1px solid rgba(255, 255, 255, 0.22);
+        margin-top: 4px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        position: relative;
+        overflow: hidden;
+        transition: background 0.4s ease, box-shadow 0.4s ease;
     }
     @media (max-width: 768px) {
         .weather-hero-card {
-            padding: 16px 14px;
+            padding: 18px 16px;
             border-radius: 16px;
         }
     }
 
-    /* 藍色大卡內部的微光指標膠囊網格 */
+    /* 4 大指標輕透毛玻璃膠囊 */
     .hero-metrics-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         margin-top: 14px;
         padding-top: 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
     }
     @media (max-width: 768px) {
         .hero-metrics-grid {
@@ -143,19 +165,20 @@ st.markdown("""
         }
     }
     .hero-metric-pill {
-        background: rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 10px;
         padding: 7px 10px;
         font-size: 12.5px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* 橫向滑動卡片流 */
+    /* 橫向滑動預報卡片流 */
     .weather-scroll-row {
         display: flex;
         gap: 10px;
@@ -197,6 +220,8 @@ st.markdown("""
         border: 1px solid #e2e8f0;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         margin-top: 8px;
+        width: 100% !important;
+        max-width: 100% !important;
     }
     .compact-tip-box {
         background: #f8fafc;
@@ -208,7 +233,7 @@ st.markdown("""
         color: #334155;
     }
 
-    /* 防止手機端 Altair 觸控產生殘留的 tooltip 浮動黑條 */
+    /* 抑制圖表在手機觸控產生的浮動殘留視窗 */
     .vega-bind, .vg-tooltip {
         display: none !important;
     }
@@ -216,7 +241,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定定位庫
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -563,6 +588,53 @@ def parse_uv_level(uv_val: float):
     else:
         return "危險", "紫外線極強，請多留在室內陰涼處。"
 
+# -------------------------------------------------------------
+# 動態背景渲染引擎：根據天氣現象代碼與溫度自適應質感深藍
+# -------------------------------------------------------------
+def get_weather_hero_style(code: int, temp: float):
+    # 1. 晴朗高照 (0, 1)
+    if code in [0, 1]:
+        return (
+            "background: radial-gradient(circle at 90% 10%, rgba(253, 224, 71, 0.28) 0%, transparent 55%), "
+            "linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #0369a1 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(2, 132, 199, 0.38), 0 8px 12px -6px rgba(2, 132, 199, 0.2);"
+        )
+    # 2. 多雲 / 局部多雲 (2)
+    elif code == 2:
+        return (
+            "background: radial-gradient(circle at 85% 15%, rgba(186, 230, 253, 0.22) 0%, transparent 50%), "
+            "linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1e293b 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(30, 58, 138, 0.36), 0 8px 12px -6px rgba(30, 58, 138, 0.2);"
+        )
+    # 3. 陰天多雲 / 霧霾 (3, 45, 48)
+    elif code in [3, 45, 48]:
+        return (
+            "background: radial-gradient(circle at 80% 20%, rgba(148, 163, 184, 0.22) 0%, transparent 60%), "
+            "linear-gradient(135deg, #334155 0%, #1e293b 60%, #0f172a 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(15, 23, 42, 0.45), 0 8px 12px -6px rgba(15, 23, 42, 0.25);"
+        )
+    # 4. 微雨 / 陣雨 / 降雨 (51, 61, 63, 80)
+    elif code in [51, 61, 63, 80]:
+        return (
+            "background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.24) 0%, transparent 50%), "
+            "linear-gradient(135deg, #0f2b48 0%, #173b63 55%, #0f172a 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(15, 43, 72, 0.48), 0 8px 12px -6px rgba(15, 43, 72, 0.25);"
+        )
+    # 5. 強降雨 / 暴風雷雨 (65, 81, 82, 95, 96)
+    elif code in [65, 81, 82, 95, 96]:
+        return (
+            "background: radial-gradient(circle at 80% 15%, rgba(168, 85, 247, 0.28) 0%, transparent 50%), "
+            "linear-gradient(135deg, #090d16 0%, #1e1b4b 55%, #172554 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(30, 27, 75, 0.55), 0 8px 12px -6px rgba(30, 27, 75, 0.3);"
+        )
+    # 預設經典質感深海藍
+    else:
+        return (
+            "background: radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.18) 0%, transparent 50%), "
+            "linear-gradient(135deg, #1e3c72 0%, #2a5298 55%, #1e293b 100%); "
+            "box-shadow: 0 14px 32px -6px rgba(30, 58, 138, 0.35);"
+        )
+
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_weather_and_aqi(lat: float, lon: float):
     weather_url = (
@@ -814,7 +886,7 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部精簡導航列 (地名膠囊化與手機端單行固定)
+# 9. 頂部精準導航列 (100% 寬度防跑版)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -822,7 +894,7 @@ active_lon = float(st.session_state.active_target["lon"])
 
 display_location_text = active_name.replace("📍 ", "").replace("目前所在地:", "")
 
-c_logo, c_capsule_btn, c_home_btn = st.columns([1.1, 2.2, 0.45], gap="small")
+c_logo, c_capsule_btn, c_home_btn = st.columns([0.85, 2.1, 0.45], gap="small")
 
 with c_logo:
     st.markdown('<div class="app-brand-title">🌤️ SkyCast</div>', unsafe_allow_html=True)
@@ -883,19 +955,19 @@ aqi_current = aqi_data.get("current", {})
 aqi_val = int(aqi_current.get("us_aqi", 35)) if aqi_current.get("us_aqi") is not None else 35
 pm25_val = aqi_current.get("pm2_5", 8.5)
 
-# 經典質感深海藍漸層
-hero_bg = "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)"
+# 取得自適應高質感深藍漸層樣式
+hero_card_style = get_weather_hero_style(cur_code, cur_temp)
 
 intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_status_str = get_comprehensive_assistant_advice(
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
 
 # -------------------------------------------------------------
-# 11. 【核心展示】原汁原味經典深藍色大卡片 (The Iconic Blue Hero Card)
+# 11. 【核心焦點】自適應質感深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
-    <div class="weather-hero-card" style="background: {hero_bg};">
+    <div class="weather-hero-card" style="{hero_card_style}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
                 <div style="font-size: 38px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;">
@@ -945,7 +1017,7 @@ with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
 with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
     st.markdown(d_desc)
 
-with st.expander(f"🏃 **運動與外出提醒**", expanded=False):
+with st.expander(f"🏃 **運動與出行指引**", expanded=False):
     st.markdown(f"**🏃 戶外活動與運動**\n\n{sport_tip}")
     st.markdown(f"**🛵 通勤出行建議**\n\n{commute_tip}")
 
