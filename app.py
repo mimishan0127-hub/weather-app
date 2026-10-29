@@ -56,6 +56,76 @@ st.markdown("""
         transform: translateY(-1px);
     }
 
+    /* 4 大即時核心指標卡片網格 (頂部焦點區) */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 992px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+    }
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+    .kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 6px;
+    }
+    .kpi-value-row {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+    .kpi-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -0.5px;
+    }
+    .kpi-unit {
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .kpi-pill {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        width: fit-content;
+    }
+
     /* 核心氣象大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
@@ -69,34 +139,6 @@ st.markdown("""
         .weather-hero-card {
             padding: 18px 16px;
         }
-    }
-
-    /* 4 大指標響應式網格 (桌機 4 欄, 手機 2x2) */
-    .status-grid-bottom {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        margin-top: 14px;
-    }
-    @media (max-width: 768px) {
-        .status-grid-bottom {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .status-badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 6px 4px;
-        border-radius: 14px;
-        white-space: nowrap;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        gap: 3px;
-        width: 100%;
-        box-sizing: border-box;
     }
 
     /* 橫向滑動卡片流 */
@@ -146,7 +188,7 @@ st.markdown("""
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 10px;
-        padding: 9px 12px;
+        padding: 10px 14px;
         margin-bottom: 12px;
         font-size: 13.5px;
         color: #334155;
@@ -155,7 +197,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區基底定位庫 (保證 100% 搜尋精準度)
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區基底定位庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -427,7 +469,6 @@ def load_all_cities_hierarchy():
         except Exception:
             pass
 
-    # 備援庫
     return {
         "亞洲 (Asia)": {
             "日本 / Japan": {
@@ -438,22 +479,18 @@ def load_all_cities_hierarchy():
     }
 
 # -------------------------------------------------------------
-# 4. 資料庫整合：自動合併試算表與臺灣 368 鄉鎮完整座標
+# 4. 資料庫整合：自動合併試算表與臺灣完整座標
 # -------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def get_taiwan_and_search_index():
     hierarchy = load_all_cities_hierarchy()
-    
-    # 預先裝載臺灣法定完整 368 鄉鎮 (確保 100% 準確度)
     taiwan_data = {c: dict(t) for c, t in BUILTIN_TAIWAN_DATA.items()}
     flattened_index = []
 
-    # 1. 納入臺灣 368 鄉鎮索引
     for county, towns in taiwan_data.items():
         for town, coords in towns.items():
             flattened_index.append((f"🇹🇼 臺灣 {county} {town}", float(coords[0]), float(coords[1])))
 
-    # 2. 納入試算表中的世界城市 (若試算表內有臺灣資料亦會動態校準)
     for continent, countries in hierarchy.items():
         for country, cities in countries.items():
             is_taiwan = any(k in country for k in ["臺灣", "台灣", "Taiwan"])
@@ -659,7 +696,7 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 選擇觀測地區彈窗 (徹底移除空標籤，使用原生容器)
+# 8. 選擇觀測地區彈窗
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -839,58 +876,125 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 11. 4 大警示指標動態顏色運算
+# 11. 4 大核心指標語意與動態配色計算 (KPI 卡片專用)
 # -------------------------------------------------------------
+# 1. 氣溫
 if cur_temp >= 33:
-    temp_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🌡️ 溫度 {cur_temp}°C (酷熱)</div>'
-elif cur_temp <= 15:
-    temp_badge = f'<div class="status-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">🌡️ 溫度 {cur_temp}°C (低溫)</div>'
+    t_status, t_bg, t_color = "酷熱偏高", "#fee2e2", "#b91c1c"
 elif cur_temp >= 29:
-    temp_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🌡️ 溫度 {cur_temp}°C (偏熱)</div>'
+    t_status, t_bg, t_color = "偏熱微悶", "#fef3c7", "#b45309"
+elif cur_temp <= 16:
+    t_status, t_bg, t_color = "氣溫偏低", "#eff6ff", "#1d4ed8"
 else:
-    temp_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🌡️ 溫度 {cur_temp}°C (宜人)</div>'
+    t_status, t_bg, t_color = "舒適宜人", "#f0fdf4", "#15803d"
 
+# 2. 降雨
 if cur_rain >= 60:
-    rain_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">💧 降雨 {cur_rain}% (警戒)</div>'
+    r_status, r_bg, r_color = "降雨機率高", "#fee2e2", "#b91c1c"
 elif cur_rain >= 30:
-    rain_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">💧 降雨 {cur_rain}% (注意)</div>'
+    r_status, r_bg, r_color = "局部偶有雨", "#fef3c7", "#b45309"
 else:
-    rain_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">💧 降雨 {cur_rain}% (良好)</div>'
+    r_status, r_bg, r_color = "降雨機率低", "#f0fdf4", "#15803d"
 
+# 3. 紫外線
 if cur_uv >= 8:
-    uv_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">☀️ 紫外線 {cur_uv:.1f} (過量)</div>'
+    uv_status_label, uv_bg, uv_color = f"過量 · UV {cur_uv:.1f}", "#fee2e2", "#b91c1c"
 elif cur_uv >= 6:
-    uv_badge = f'<div class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">☀️ 紫外線 {cur_uv:.1f} (高量)</div>'
+    uv_status_label, uv_bg, uv_color = f"高量 · UV {cur_uv:.1f}", "#ffedd5", "#c2410c"
 elif cur_uv >= 3:
-    uv_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">☀️ 紫外線 {cur_uv:.1f} (中量)</div>'
+    uv_status_label, uv_bg, uv_color = f"中量 · UV {cur_uv:.1f}", "#fef3c7", "#b45309"
 else:
-    uv_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">☀️ 紫外線 {cur_uv:.1f} (微量)</div>'
+    uv_status_label, uv_bg, uv_color = f"微量 · UV {cur_uv:.1f}", "#f0fdf4", "#15803d"
 
+# 4. 空氣品質 AQI
 if aqi_val >= 150:
-    aqi_badge = f'<div class="status-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;">🍃 空污 AQI {aqi_val} (有害)</div>'
+    aqi_status_label, aqi_bg, aqi_color = f"有害 · AQI {aqi_val}", "#fee2e2", "#b91c1c"
 elif aqi_val >= 101:
-    aqi_badge = f'<div class="status-badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa;">🍃 空污 AQI {aqi_val} (敏感)</div>'
+    aqi_status_label, aqi_bg, aqi_color = f"敏感 · AQI {aqi_val}", "#ffedd5", "#c2410c"
 elif aqi_val >= 51:
-    aqi_badge = f'<div class="status-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d;">🍃 空污 AQI {aqi_val} (普通)</div>'
+    aqi_status_label, aqi_bg, aqi_color = f"普通 · AQI {aqi_val}", "#fef3c7", "#b45309"
 else:
-    aqi_badge = f'<div class="status-badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">🍃 空污 AQI {aqi_val} (良好)</div>'
+    aqi_status_label, aqi_bg, aqi_color = f"良好 · AQI {aqi_val}", "#f0fdf4", "#15803d"
 
 # -------------------------------------------------------------
-# 12. 即時微氣象與生活小幫手
+# 12. 頂部 4 大關鍵指標卡片區 (一進畫面一目了然)
+# -------------------------------------------------------------
+st.markdown(
+    f"""
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span>🌡️ 即時氣溫</span>
+                <span style="font-size: 11.5px; color: #94a3b8;">體感 {cur_feels:.1f}°C</span>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{cur_temp:.1f}</span>
+                <span class="kpi-unit">°C</span>
+            </div>
+            <div class="kpi-pill" style="background: {t_bg}; color: {t_color};">
+                ● {t_status}
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span>💧 降雨機率</span>
+                <span style="font-size: 11.5px; color: #94a3b8;">濕度 {cur_hum}%</span>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{cur_rain}</span>
+                <span class="kpi-unit">%</span>
+            </div>
+            <div class="kpi-pill" style="background: {r_bg}; color: {r_color};">
+                ● {r_status}
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span>☀️ 紫外線指數</span>
+                <span style="font-size: 11.5px; color: #94a3b8;">分級: {uv_status_str}</span>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{cur_uv:.1f}</span>
+                <span class="kpi-unit">UV</span>
+            </div>
+            <div class="kpi-pill" style="background: {uv_bg}; color: {uv_color};">
+                ● {uv_status_label}
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span>🍃 空氣品質</span>
+                <span style="font-size: 11.5px; color: #94a3b8;">PM2.5: {pm25_val:.1f}</span>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{aqi_val}</span>
+                <span class="kpi-unit">AQI</span>
+            </div>
+            <div class="kpi-pill" style="background: {aqi_bg}; color: {aqi_color};">
+                ● {aqi_status_label}
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# -------------------------------------------------------------
+# 13. 天氣情境簡報與生活小幫手
 # -------------------------------------------------------------
 col_weather, col_tips = st.columns([1.1, 1.2], gap="large")
 
 with col_weather:
-    st.markdown("##### ⚡ 即時微氣象")
+    st.markdown("##### ⚡ 天氣概況")
     st.markdown(
         f'<div class="weather-hero-card" style="background: {hero_bg};">'
         f'<div style="display: flex; justify-content: space-between; align-items: center;">'
         f'<div><div style="font-size: 34px; font-weight: 700; line-height: 1.2;">{icon} {cur_temp}°C</div>'
-        f'<div style="font-size: 15px; opacity: 0.95; margin-top: 4px;">{condition} | 體感 {cur_feels}°C</div></div>'
-        f'<div style="text-align: right; font-size: 13px; opacity: 0.95; line-height: 1.7;">'
-        f'<div>💧 降雨機率 <strong>{cur_rain}%</strong> | 濕度 <strong>{cur_hum}%</strong></div>'
-        f'<div style="margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.22); display: inline-block;">'
-        f'☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) | 🍃 AQI <strong>{aqi_val}</strong></div></div></div></div>',
+        f'<div style="font-size: 16px; opacity: 0.95; margin-top: 6px;">{condition} · 體感約 {cur_feels}°C</div></div>'
+        f'<div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.7;">'
+        f'<div>💨 風速 <strong>{cur_wind} km/h</strong></div>'
+        f'<div>💧 空氣濕度 <strong>{cur_hum}%</strong></div>'
+        f'</div></div></div>',
         unsafe_allow_html=True
     )
 
@@ -900,30 +1004,20 @@ with col_weather:
 
 with col_tips:
     st.markdown("##### 💡 生活小幫手")
-    st.markdown(f'<div class="compact-tip-box">✨ <strong>出門建議：</strong>{intro}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
 
-    with st.expander(f"👕 **穿著**：{w_head}", expanded=True):
+    with st.expander(f"👕 **穿著建議**：{w_head}", expanded=True):
         st.markdown(w_desc)
 
-    with st.expander(f"🧺 **曬衣**：{d_head}", expanded=False):
+    with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
         st.markdown(d_desc)
 
     st.caption("🎒 **隨身行囊建議**：" + " | ".join(pack_items))
 
-    st.markdown(
-        f'<div class="status-grid-bottom">'
-        f'{temp_badge}'
-        f'{rain_badge}'
-        f'{uv_badge}'
-        f'{aqi_badge}'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來 6 小時即時預報 (防崩潰折線圖)
+# 14. 未來 6 小時即時預報 (防崩潰折線圖)
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -955,7 +1049,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 未來一週 (7天) 展望
+# 15. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -989,7 +1083,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 地圖置底呈現 (綁定動態 Key 強制移動視角 + 100% 寬度)
+# 16. 地圖置底呈現 (綁定動態 Key 強制移動視角 + 100% 寬度)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
@@ -1010,7 +1104,6 @@ folium.Marker(
 ).add_to(map_instance)
 
 st.markdown('<div class="map-frame-container">', unsafe_allow_html=True)
-# 透過 key=f"map_{active_lat:.4f}_{active_lon:.4f}" 強制重新掛載地圖中心
 st_folium(
     map_instance,
     key=f"map_{active_lat:.4f}_{active_lon:.4f}",
