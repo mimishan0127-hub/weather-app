@@ -37,97 +37,67 @@ st.markdown("""
         background: transparent;
     }
 
-    /* 2. 邊距深度優化 */
+    /* 2. 邊距極致適配 */
     .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 2.2rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
+        padding-top: 0.8rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
     @media (max-width: 768px) {
         .block-container {
-            padding-top: 0.6rem !important;
-            padding-bottom: 1.6rem !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 1.5rem !important;
             padding-left: 0.65rem !important;
             padding-right: 0.65rem !important;
         }
     }
 
-    /* 3. 頂部 App 品牌標題質感 */
+    /* 3. 頂部 App 品牌標題 */
     .app-brand-title {
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 800;
         color: #0f172a;
-        letter-spacing: -0.4px;
+        white-space: nowrap;
         display: flex;
         align-items: center;
         gap: 6px;
         margin-bottom: 8px;
+        letter-spacing: -0.3px;
     }
 
-    /* 4. 頂部小分頁極致美化 (iOS Segmented Control 旗艦質感，徹底移除紅線) */
-    .stTabs [data-baseweb="tab-list"] {
+    /* 4. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
+    div[data-testid="stHorizontalBlock"]:first-of-type {
         background-color: #e2e8f0 !important;
         padding: 4px !important;
-        border-radius: 14px !important;
-        gap: 4px !important;
+        border-radius: 16px !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+        border: 1px solid #cbd5e1 !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        border: 1px solid #cbd5e1 !important;
     }
-    .stTabs [data-baseweb="tab"] {
+    div[data-testid="stHorizontalBlock"]:first-of-type div[data-testid="column"] {
         flex: 1 1 0% !important;
+        min-width: 0 !important;
+        width: 50% !important;
+        padding: 0 !important;
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type div[data-testid="column"] button {
+        border-radius: 12px !important;
         height: 38px !important;
-        border-radius: 10px !important;
+        min-height: 38px !important;
         font-size: 14px !important;
         font-weight: 600 !important;
-        color: #64748b !important;
-        background-color: transparent !important;
         border: none !important;
+        width: 100% !important;
         display: flex !important;
-        justify-content: center !important;
         align-items: center !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #0284c7 !important;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
-        font-weight: 700 !important;
-    }
-    /* 徹底隱藏原生醜陋的紅色底線與邊框 */
-    .stTabs [data-baseweb="tab-highlight"],
-    .stTabs [data-baseweb="tab-border"] {
-        display: none !important;
+        justify-content: center !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* 5. 分頁內容質感卡片容器 */
-    .tab-content-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 14px 16px;
-        margin-top: 6px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
-    }
-
-    /* 快捷推薦小膠囊按鈕 */
-    .quick-chip-btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: 20px;
-        background: #f1f5f9;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 500;
-        border: 1px solid #e2e8f0;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    /* 6. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 5. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -597,42 +567,36 @@ def parse_uv_level(uv_val: float):
 # 智慧動態高質感深藍背景引擎 (依即時氣候狀態渲染微光層次)
 # -------------------------------------------------------------
 def get_weather_hero_style(code: int, temp: float):
-    # 1. 晴朗高照 (☀️ 金黃晨光微暈 + 湛藍海洋)
     if code in [0, 1]:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(253, 224, 71, 0.35) 0%, rgba(56, 189, 248, 0.18) 45%, transparent 70%), "
             "linear-gradient(135deg, #1d4ed8 0%, #0284c7 55%, #0369a1 100%); "
             "box-shadow: 0 14px 30px -6px rgba(2, 132, 199, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);"
         )
-    # 2. 多雲舒適 (⛅ 經典皇家寶石深藍 + 柔和雲霧光)
     elif code == 2:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(224, 242, 254, 0.28) 0%, rgba(96, 165, 250, 0.15) 45%, transparent 65%), "
             "linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #172554 100%); "
             "box-shadow: 0 14px 30px -6px rgba(30, 58, 138, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.28);"
         )
-    # 3. 陰天多雲 / 晨霧 (☁️ 北歐鋼鐵灰藍 + 銀色霧感)
     elif code in [3, 45, 48]:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(203, 213, 225, 0.24) 0%, transparent 60%), "
             "linear-gradient(135deg, #334155 0%, #1e293b 55%, #0f172a 100%); "
             "box-shadow: 0 14px 30px -6px rgba(15, 23, 42, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.2);"
         )
-    # 4. 微雨 / 陣雨 / 降雨 (🌧️ 深邃午夜雨幕藍 + 水藍漫反射)
     elif code in [51, 61, 63, 65, 80, 81]:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(56, 189, 248, 0.32) 0%, rgba(14, 116, 144, 0.2) 45%, transparent 70%), "
             "linear-gradient(135deg, #0c2340 0%, #133e68 55%, #081d33 100%); "
             "box-shadow: 0 14px 30px -6px rgba(12, 35, 64, 0.5), inset 0 1px 1px rgba(56, 189, 248, 0.28);"
         )
-    # 5. 強烈雷雨 (⛈️ 暴風夜空紫藍 + 電光微光暈)
     elif code in [82, 95, 96]:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(168, 85, 247, 0.35) 0%, rgba(99, 102, 241, 0.2) 45%, transparent 65%), "
             "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #172554 100%); "
             "box-shadow: 0 14px 30px -6px rgba(30, 27, 75, 0.55), inset 0 1px 1px rgba(192, 132, 252, 0.3);"
         )
-    # 預設經典深海藍
     else:
         return (
             "background: radial-gradient(ellipse at 85% 15%, rgba(255, 255, 255, 0.2) 0%, transparent 55%), "
@@ -795,101 +759,32 @@ taiwan_data, flattened_index = get_taiwan_and_search_index()
 world_hierarchy = load_all_cities_hierarchy()
 
 # -------------------------------------------------------------
-# 8. 頂部地點控制：【目前位置】與【其他地區】極簡小分頁系統
+# 8. 專屬對話提示框：選擇想查詢的其他地區 (選完即關閉並更新)
 # -------------------------------------------------------------
-st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
+dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
-# 依使用者需求：互換分頁順序，名稱精簡為「目前位置」與「其他地區」
-tab_current, tab_other = st.tabs(["📍 目前位置", "🌍 其他地區"])
-
-# 【分頁 1：目前位置】
-with tab_current:
-    is_at_home = (
-        abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
-        abs(st.session_state.active_target["lon"] - st.session_state.my_home_location["lon"]) < 0.001
-    )
-    
-    st.markdown(
-        f"""
-        <div class="tab-content-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 12px; color: #64748b; font-weight: 600;">📡 設備 GPS 定位地點</div>
-                    <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 2px;">
-                        📍 {st.session_state.my_home_location['name']}
-                    </div>
-                </div>
-                <div>
-                    {'<span style="font-size: 12px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 4px 10px; border-radius: 20px;">● 觀測中</span>' if is_at_home else '<span style="font-size: 12px; color: #94a3b8; font-weight: 500;">非目前視角</span>'}
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    if not is_at_home:
-        if st.button("🎯 回到目前設備定位進行觀測", use_container_width=True, type="primary", key="btn_return_home"):
-            st.session_state.active_target = {
-                "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
-                "lat": float(st.session_state.my_home_location["lat"]),
-                "lon": float(st.session_state.my_home_location["lon"])
-            }
-            st.rerun()
-
-# 【分頁 2：其他地區】(先提示想查詢地點，支援搜尋 + 熱門快捷 + 階層選單)
-with tab_other:
-    st.markdown(
-        """
-        <div style="margin: 4px 0 8px 2px;">
-            <span style="font-size: 14px; font-weight: 700; color: #0f172a;">🔍 想查詢哪裡的天氣？</span>
-            <span style="font-size: 12px; color: #64748b; margin-left: 6px;">請直接搜尋或於下方點選</span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+def render_location_dialog_content():
+    st.markdown("#### 🔍 想查詢哪裡的天氣？")
+    st.caption("請輸入地名或點擊快捷標籤，選擇後將自動為您切換天氣：")
 
     # 1. 核心搜尋框
     search_query = st.text_input(
-        "輸入地名搜尋",
-        placeholder="請輸入鄉鎮或城市，例如：東勢、板橋、新宿、巴黎、London...",
-        label_visibility="collapsed",
-        key="search_other_input"
+        "輸入地名關鍵字",
+        placeholder="例如：東勢、板橋、新宿、巴黎、London...",
+        key="dlg_search_query"
     )
 
-    # 2. 快捷熱門地點標籤 (一鍵即時切換)
-    st.markdown("<div style='font-size: 12px; color: #64748b; font-weight: 600; margin: 8px 0 4px 2px;'>⚡ 熱門推薦地點：</div>", unsafe_allow_html=True)
-    c_q1, c_q2, c_q3, c_q4, c_q5, c_q6 = st.columns(6)
-    quick_targets = [
-        ("臺中 東勢", 24.2586, 120.8283),
-        ("新北 板橋", 25.0125, 121.4657),
-        ("臺北 中正", 25.0324, 121.5190),
-        ("高雄 苓雅", 22.6273, 120.3014),
-        ("日本 東京", 35.6762, 139.6503),
-        ("法國 巴黎", 48.8566, 2.3522)
-    ]
-    for idx, (q_name, q_lat, q_lon) in enumerate(quick_targets):
-        col = [c_q1, c_q2, c_q3, c_q4, c_q5, c_q6][idx]
-        with col:
-            if st.button(q_name, key=f"quick_{idx}", use_container_width=True):
-                st.session_state.active_target = {
-                    "name": f"📍 {q_name}",
-                    "lat": q_lat,
-                    "lon": q_lon
-                }
-                st.rerun()
-
-    # 3. 搜尋結果呈現
+    # 2. 搜尋結果即時呈現 (若有打字即刻列出匹配)
     if search_query.strip():
         q = search_query.strip().lower()
         matched = [item for item in flattened_index if q in item[0].lower()]
         if matched:
-            st.caption(f"找到 {len(matched)} 個相符地點（點擊直接切換）：")
+            st.markdown(f"**找到 {len(matched)} 個相符地點：**")
             cols = st.columns(2)
             for idx, (name, lat, lon) in enumerate(matched[:8]):
                 clean_name = name.replace("🇹🇼 ", "").replace("🌍 ", "")
                 with cols[idx % 2]:
-                    if st.button(f"📍 {name}", key=f"s_btn_{clean_name}_{lat}_{lon}", use_container_width=True):
+                    if st.button(f"📍 {name}", key=f"dlg_match_{clean_name}_{lat}_{lon}", use_container_width=True):
                         st.session_state.active_target = {
                             "name": f"📍 {clean_name}",
                             "lat": float(lat),
@@ -899,17 +794,41 @@ with tab_other:
         else:
             st.info("查無符合地點，請嘗試輸入其他關鍵字或至下方選單挑選。")
 
-    # 4. 完整的臺灣與全球階層選單 (折疊式收納，質感整潔)
-    with st.expander("📂 臺灣縣市鄉鎮 / 全球大洲城市 分類點選", expanded=False):
+    st.markdown("---")
+
+    # 3. 快捷推薦熱門地標
+    st.markdown("**⚡ 熱門推薦城市：**")
+    c_q1, c_q2, c_q3 = st.columns(3)
+    quick_targets = [
+        ("臺中 東勢", 24.2586, 120.8283),
+        ("新北 板橋", 25.0125, 121.4657),
+        ("臺北 中正", 25.0324, 121.5190),
+        ("高雄 苓雅", 22.6273, 120.3014),
+        ("日本 東京", 35.6762, 139.6503),
+        ("法國 巴黎", 48.8566, 2.3522)
+    ]
+    for idx, (q_name, q_lat, q_lon) in enumerate(quick_targets):
+        col = [c_q1, c_q2, c_q3][idx % 3]
+        with col:
+            if st.button(f"📍 {q_name}", key=f"dlg_q_{idx}", use_container_width=True):
+                st.session_state.active_target = {
+                    "name": f"📍 {q_name}",
+                    "lat": q_lat,
+                    "lon": q_lon
+                }
+                st.rerun()
+
+    # 4. 完整的臺灣鄉鎮與全球大洲選單 (折疊式收納)
+    with st.expander("📂 完整分類清單（臺灣 368 鄉鎮 / 全球大洲城市）", expanded=False):
         c_sub1, c_sub2 = st.columns(2)
         with c_sub1:
             st.markdown("###### 🇹🇼 臺灣鄉鎮")
             county_list = list(taiwan_data.keys())
             if county_list:
-                sel_county = st.selectbox("選擇縣市", options=county_list, index=0, key="sb_county")
+                sel_county = st.selectbox("選擇縣市", options=county_list, index=0, key="dlg_sb_county")
                 t_list = list(taiwan_data.get(sel_county, {}).keys())
-                sel_town = st.selectbox("選擇鄉鎮市區", options=t_list, index=0, key="sb_town")
-                if st.button(f"📍 定位至 {sel_county} {sel_town}", use_container_width=True, key="btn_tw_confirm"):
+                sel_town = st.selectbox("選擇鄉鎮市區", options=t_list, index=0, key="dlg_sb_town")
+                if st.button(f"確認定位至 {sel_town}", use_container_width=True, type="primary", key="dlg_btn_tw_confirm"):
                     coords = taiwan_data[sel_county][sel_town]
                     st.session_state.active_target = {
                         "name": f"📍 臺灣 {sel_county} {sel_town}",
@@ -921,14 +840,14 @@ with tab_other:
             st.markdown("###### 🌍 全球城市")
             cont_list = list(world_hierarchy.keys())
             if cont_list:
-                sel_cont = st.selectbox("選擇大洲", options=cont_list, index=0, key="sb_cont")
+                sel_cont = st.selectbox("選擇大洲", options=cont_list, index=0, key="dlg_sb_cont")
                 c_dict = world_hierarchy.get(sel_cont, {})
                 country_list = sorted(list(c_dict.keys()))
-                sel_country = st.selectbox("選擇國家", options=country_list, index=0 if country_list else None, key="sb_country")
+                sel_country = st.selectbox("選擇國家", options=country_list, index=0 if country_list else None, key="dlg_sb_country")
                 city_dict = c_dict.get(sel_country, {}) if sel_country else {}
                 city_list = list(city_dict.keys())
-                sel_city = st.selectbox("選擇城市", options=city_list, index=0 if city_list else None, key="sb_city")
-                if sel_city and st.button(f"📍 定位至 {sel_city.split('(')[0]}", use_container_width=True, key="btn_world_confirm"):
+                sel_city = st.selectbox("選擇城市", options=city_list, index=0 if city_list else None, key="dlg_sb_city")
+                if sel_city and st.button(f"確認定位至該城市", use_container_width=True, type="primary", key="dlg_btn_world_confirm"):
                     coords = city_dict[sel_city]
                     clean_c = sel_country.split('/')[0].strip() if sel_country else ""
                     clean_t = sel_city.split('(')[0].strip()
@@ -939,8 +858,46 @@ with tab_other:
                     }
                     st.rerun()
 
+if dialog_decorator:
+    @dialog_decorator("🧭 選擇觀測地區")
+    def open_location_dialog():
+        render_location_dialog_content()
+else:
+    def open_location_dialog():
+        render_location_dialog_content()
+
 # -------------------------------------------------------------
-# 9. 天氣資料獲取與運算
+# 9. 頂部地點切換膠囊 (目前位置 vs 其他地區)
+# -------------------------------------------------------------
+st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
+
+# 判斷當前是否正處於設備所在真實位置
+is_at_home = (
+    abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
+    abs(st.session_state.active_target["lon"] - st.session_state.my_home_location["lon"]) < 0.001
+)
+
+c_home_tab, c_other_tab = st.columns(2)
+
+with c_home_tab:
+    # 點擊回到設備定位
+    btn_type = "primary" if is_at_home else "secondary"
+    if st.button("📍 目前位置", use_container_width=True, type=btn_type, key="btn_nav_home"):
+        st.session_state.active_target = {
+            "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
+            "lat": float(st.session_state.my_home_location["lat"]),
+            "lon": float(st.session_state.my_home_location["lon"])
+        }
+        st.rerun()
+
+with c_other_tab:
+    # 點擊跳出想查詢地點的提示彈窗
+    btn_type = "secondary" if is_at_home else "primary"
+    if st.button("🌍 其他地區", use_container_width=True, type=btn_type, key="btn_nav_other"):
+        open_location_dialog()
+
+# -------------------------------------------------------------
+# 10. 天氣資料獲取與運算
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
@@ -1000,7 +957,7 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 10. 【核心焦點】自適應高質感動態深藍氣象大卡片
+# 11. 【核心焦點】自適應高質感動態深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -1051,7 +1008,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 11. 【生活小幫手】(預設收折，整齊俐落)
+# 12. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1072,7 +1029,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 12. 未來 6 小時即時預報趨勢
+# 13. 未來 6 小時即時預報趨勢
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -1104,7 +1061,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 13. 未來一週 (7天) 展望
+# 14. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1138,7 +1095,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
+# 15. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
