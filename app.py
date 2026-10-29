@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與頂級極簡響應式樣式
+# 1. 頁面全域配置與現代極簡響應式樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -24,26 +24,19 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 徹底隱藏頂部工具列 (Share, Star, GitHub, 選單) 與 頁尾 */
+    /* 1. 徹底隱藏 Streamlit 雲端內建頂部導航列 (Share, Star, GitHub, 選單) 與 頁尾 */
     header[data-testid="stHeader"],
     [data-testid="stHeader"],
     [data-testid="stToolbar"],
     .stAppDeployButton,
     #MainMenu,
     footer,
-    /* 2. 徹底隱藏右下角「Hosted with Streamlit」紅色皇冠、作者頭像與管理按鈕 */
     [data-testid="stStatusWidget"],
     [data-testid="manage-app-button"],
     #manage-app-button,
-    .viewerBadge_container__1QSob,
-    .styles_viewerBadge__1yB5_,
-    .viewerBadge_link__1S137,
-    .viewerBadge_text__1JaDK,
     div[class*="viewerBadge"],
     div[class*="StatusWidget"],
-    div[class*="Profile"],
-    a[href*="streamlit.io"],
-    a[href*="streamlit.app"] {
+    div[class*="Profile"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
@@ -54,7 +47,7 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* 3. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
+    /* 2. 嚴格鎖定視窗全域寬度，徹底根除手機橫向滑動與破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -65,7 +58,7 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* 4. 邊距極致適配 */
+    /* 3. 邊距極致適配 */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -81,7 +74,7 @@ st.markdown("""
         }
     }
 
-    /* 5. 頂部 App 品牌標題 */
+    /* 4. 頂部 App 品牌標題 */
     .app-brand-title {
         font-size: 20px;
         font-weight: 800;
@@ -94,7 +87,7 @@ st.markdown("""
         letter-spacing: -0.3px;
     }
 
-    /* 6. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
+    /* 5. 頂部地點切換控制器 (仿 iOS Segmented Control 質感膠囊，50/50 完美對稱) */
     div[data-testid="stHorizontalBlock"]:first-of-type {
         background-color: #e2e8f0 !important;
         padding: 4px !important;
@@ -140,7 +133,7 @@ st.markdown("""
         color: #334155 !important;
     }
 
-    /* 7. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 6. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -189,7 +182,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* 橫向滑動預報卡片流 (12小時展示) */
+    /* 橫向滑動預報卡片流 (12小時滑動展示) */
     .weather-scroll-row {
         display: flex;
         gap: 10px;
@@ -227,12 +220,12 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
 
-    /* 8. AI 12小時變化洞察卡片樣式 */
+    /* 7. AI 12小時變化洞察卡片樣式 (高質感升級) */
     .ai-summary-card {
         background: #ffffff;
         border: 1px solid #e0f2fe;
         border-radius: 16px;
-        padding: 16px 18px;
+        padding: 15px 18px;
         box-shadow: 0 4px 14px rgba(2, 132, 199, 0.06);
         box-sizing: border-box;
         margin-bottom: 10px;
@@ -248,7 +241,7 @@ st.markdown("""
     .ai-summary-body {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 9px;
         font-size: 13.5px;
         line-height: 1.6;
         color: #334155;
@@ -323,7 +316,7 @@ components.html("""
                 });
             }
         } catch (e) {
-            // 忽略跨來源警告
+            // 忽略跨來源安全阻擋
         }
     };
     removeStreamlitBadges();
@@ -604,15 +597,34 @@ def load_all_cities_hierarchy():
         except Exception:
             pass
 
+    # 備援基礎都市資料庫
     return {
         "亞洲 (Asia)": {
             "日本 / Japan": {
                 "東京 (Tokyo)": [35.6762, 139.6503],
                 "大阪 (Osaka)": [34.6937, 135.5023]
+            },
+            "南韓 / South Korea": {
+                "首爾 (Seoul)": [37.5665, 126.9780]
+            }
+        },
+        "歐洲 (Europe)": {
+            "法國 / France": {
+                "巴黎 (Paris)": [48.8566, 2.3522]
+            },
+            "英國 / United Kingdom": {
+                "倫敦 (London)": [51.5074, -0.1278]
+            }
+        },
+        "北美洲 (North America)": {
+            "美國 / United States": {
+                "紐約 (New York)": [40.7128, -74.0060],
+                "洛杉磯 (Los Angeles)": [34.0522, -118.2437]
             }
         }
     }
 
+# 雙向函式別名綁定，徹底杜絕 NameError
 load_world_cities_hierarchy = load_all_cities_hierarchy
 
 # -------------------------------------------------------------
@@ -628,7 +640,11 @@ def get_taiwan_and_search_index():
             is_taiwan = any(k in country for k in ["臺灣", "台灣", "Taiwan"])
 
             for city_label, coords in cities.items():
-                lat_f, lon_f = float(coords[0]), float(coords[1])
+                try:
+                    lat_f, lon_f = float(coords[0]), float(coords[1])
+                except (ValueError, TypeError, IndexError):
+                    continue
+
                 if is_taiwan:
                     parts = city_label.split(" ")
                     county = parts[0]
@@ -836,80 +852,93 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 8. AI 12小時氣象洞察分析引擎
+# 8. AI 12小時氣象洞察分析引擎 (增強型防護邊界)
 # -------------------------------------------------------------
 def generate_12h_ai_summary(times, temps, rains, codes):
-    if not times:
-        return "暫無足夠預報數據可供分析。"
-
-    max_t = max(temps)
-    min_t = min(temps)
-    max_t_idx = temps.index(max_t)
-    min_t_idx = temps.index(min_t)
-    max_t_time = times[max_t_idx]
-    min_t_time = times[min_t_idx]
-    temp_range = round(max_t - min_t, 1)
-
-    max_r = max(rains)
-    max_r_idx = rains.index(max_r)
-    max_r_time = times[max_r_idx]
-
-    start_t = temps[0]
-    end_t = temps[-1]
-    if end_t - start_t >= 2.5:
-        t_trend_desc = f"氣溫呈現明顯回升趨勢（溫差攀升約 {round(end_t - start_t, 1)}°C）"
-    elif start_t - end_t >= 2.5:
-        t_trend_desc = f"氣溫將逐漸下滑轉涼（預估降幅達 {round(start_t - end_t, 1)}°C）"
-    else:
-        t_trend_desc = "氣溫起伏相對平緩穩健"
-
-    rainy_hours = [times[i] for i, r in enumerate(rains) if r >= 40]
-    if rainy_hours:
-        rain_desc = f"預計在 <strong>{', '.join(rainy_hours[:3])}</strong> 等時段降雨機率顯著增高（最高達 <strong>{max_r}%</strong> 出現在 {max_r_time}），出門請務必攜帶雨具備用。"
-    elif max_r >= 25:
-        rain_desc = f"降雨機率最高約 <strong>{max_r}%</strong>（約 {max_r_time}），雲量偏多偶有微雨，天色稍陰但影響不大。"
-    else:
-        rain_desc = f"未來 12 小時天候乾爽穩定，最高降雨機率僅 <strong>{max_r}%</strong>，外出無需擔心降雨打擾。"
-
-    advice_list = []
-    if temp_range >= 5:
-        advice_list.append(f"早晚/日夜溫差達 {temp_range}°C，建議採洋蔥式穿搭並隨身攜帶薄外套")
-    if max_r >= 40:
-        advice_list.append("路面潮濕易打滑，行經標線或水溝蓋請減速慢行")
-    if max_t >= 30:
-        advice_list.append(f"午後最高溫達 {max_t:.1f}°C，戶外請加強防曬並適時補充水分")
-    elif min_t <= 18:
-        advice_list.append(f"最低溫觸及 {min_t:.1f}°C，夜間微涼出門請加強防風保暖")
-
-    if not advice_list:
-        advice_list.append("氣候舒適平穩，非常適宜各項戶外休閒散步或公務出行")
-
-    summary_html = f"""
-    <div class="ai-summary-card">
-        <div class="ai-summary-header">
-            <span style="font-size: 17px;">🤖</span>
-            <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
-        </div>
-        <div class="ai-summary-body">
-            <div class="ai-summary-item">
-                <span class="ai-item-icon">🌡️</span>
-                <div><strong>氣溫起伏：</strong>未來 12 小時預估在 <strong>{min_t:.1f}°C ~ {max_t:.1f}°C</strong> 之間波動，高溫落在 {max_t_time}，低溫在 {min_t_time}，{t_trend_desc}。</div>
+    if not times or not temps or len(temps) == 0:
+        return """
+        <div class="ai-summary-card">
+            <div class="ai-summary-header">
+                <span style="font-size: 17px;">🤖</span>
+                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
             </div>
-            <div class="ai-summary-item">
-                <span class="ai-item-icon">💧</span>
-                <div><strong>降雨走向：</strong>{rain_desc}</div>
-            </div>
-            <div class="ai-summary-item">
-                <span class="ai-item-icon">💡</span>
-                <div><strong>即時建議：</strong>{'；'.join(advice_list)}。</div>
+            <div class="ai-summary-body">
+                <div>資料同步中，請稍候刷新即可取得即時洞察。</div>
             </div>
         </div>
-    </div>
-    """
-    return summary_html
+        """
+
+    try:
+        max_t = max(temps)
+        min_t = min(temps)
+        max_t_idx = temps.index(max_t)
+        min_t_idx = temps.index(min_t)
+        max_t_time = times[max_t_idx] if max_t_idx < len(times) else "稍後"
+        min_t_time = times[min_t_idx] if min_t_idx < len(times) else "稍後"
+        temp_range = round(max_t - min_t, 1)
+
+        safe_rains = rains if rains else [0] * len(temps)
+        max_r = max(safe_rains)
+        max_r_idx = safe_rains.index(max_r)
+        max_r_time = times[max_r_idx] if max_r_idx < len(times) else "期間"
+
+        start_t = temps[0]
+        end_t = temps[-1]
+        if end_t - start_t >= 2.5:
+            t_trend_desc = f"氣溫呈現明顯回升趨勢（溫差攀升約 {round(end_t - start_t, 1)}°C）"
+        elif start_t - end_t >= 2.5:
+            t_trend_desc = f"氣溫將逐漸下滑轉涼（預估降幅達 {round(start_t - end_t, 1)}°C）"
+        else:
+            t_trend_desc = "氣溫起伏相對平緩穩健"
+
+        rainy_hours = [times[i] for i, r in enumerate(safe_rains) if r >= 40 and i < len(times)]
+        if rainy_hours:
+            rain_desc = f"預計在 <strong>{', '.join(rainy_hours[:3])}</strong> 等時段降雨機率偏高（最高達 <strong>{max_r}%</strong> 出現在 {max_r_time}），出門請隨身攜帶雨具。"
+        elif max_r >= 25:
+            rain_desc = f"降雨機率最高約 <strong>{max_r}%</strong>（約 {max_r_time}），雲量偏多偶有微雨，天色稍陰但總體影響不大。"
+        else:
+            rain_desc = f"未來 12 小時天候乾爽穩定，最高降雨機率僅 <strong>{max_r}%</strong>，外出無需擔心降雨打擾。"
+
+        advice_list = []
+        if temp_range >= 5:
+            advice_list.append(f"早晚/日夜溫差達 {temp_range}°C，建議採洋蔥式穿搭並攜帶薄外套")
+        if max_r >= 40:
+            advice_list.append("路面潮濕易打滑，行經標線或水溝蓋請減速慢行")
+        if max_t >= 30:
+            advice_list.append(f"最高溫達 {max_t:.1f}°C，戶外請加強防曬並適時補充水分")
+        elif min_t <= 18:
+            advice_list.append(f"最低溫觸及 {min_t:.1f}°C，出門請加強防風保暖")
+
+        if not advice_list:
+            advice_list.append("氣候舒適平穩，非常適宜各項戶外休閒散步或出行")
+
+        return f"""
+        <div class="ai-summary-card">
+            <div class="ai-summary-header">
+                <span style="font-size: 17px;">🤖</span>
+                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
+            </div>
+            <div class="ai-summary-body">
+                <div class="ai-summary-item">
+                    <span class="ai-item-icon">🌡️</span>
+                    <div><strong>氣溫起伏：</strong>預估在 <strong>{min_t:.1f}°C ~ {max_t:.1f}°C</strong> 之間波動，高溫落在 {max_t_time}，低溫在 {min_t_time}，{t_trend_desc}。</div>
+                </div>
+                <div class="ai-summary-item">
+                    <span class="ai-item-icon">💧</span>
+                    <div><strong>降雨走向：</strong>{rain_desc}</div>
+                </div>
+                <div class="ai-summary-item">
+                    <span class="ai-item-icon">💡</span>
+                    <div><strong>即時建議：</strong>{'；'.join(advice_list)}。</div>
+                </div>
+            </div>
+        </div>
+        """
+    except Exception:
+        return "<div class='ai-summary-card'>AI 氣象管家正連線中...</div>"
 
 # -------------------------------------------------------------
-# 9. 所在地狀態持久化
+# 9. 所在地狀態持久化 (防止反覆刷新重跑)
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -919,14 +948,20 @@ if "my_home_location" not in st.session_state:
     }
 
 geo = get_geolocation()
-if geo and "coords" in geo:
-    u_lat = float(geo["coords"]["latitude"])
-    u_lon = float(geo["coords"]["longitude"])
-    st.session_state.my_home_location = {
-        "name": "目前設備所在",
-        "lat": u_lat,
-        "lon": u_lon
-    }
+if geo and isinstance(geo, dict) and "coords" in geo and geo["coords"]:
+    try:
+        u_lat = float(geo["coords"].get("latitude", 24.2586))
+        u_lon = float(geo["coords"].get("longitude", 120.8283))
+        # 僅當經緯度位移大於閥值才更新，避免微小抖動觸發重跑
+        if (abs(u_lat - st.session_state.my_home_location["lat"]) > 0.005 or
+            abs(u_lon - st.session_state.my_home_location["lon"]) > 0.005):
+            st.session_state.my_home_location = {
+                "name": "目前設備所在",
+                "lat": u_lat,
+                "lon": u_lon
+            }
+    except (ValueError, TypeError):
+        pass
 
 if "active_target" not in st.session_state:
     st.session_state.active_target = {
@@ -938,7 +973,7 @@ if "active_target" not in st.session_state:
 taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 10. 純粹直覺的階層式選擇視窗
+# 10. 純粹直覺的階層式選擇視窗 (加強切換防呆)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -958,12 +993,12 @@ def render_location_dialog_content():
         county_list = list(taiwan_data.keys())
         if county_list:
             default_c_idx = county_list.index("臺中市") if "臺中市" in county_list else 0
-            sel_county = st.selectbox("1. 選擇縣市", options=county_list, index=default_c_idx)
+            sel_county = st.selectbox("1. 選擇縣市", options=county_list, index=default_c_idx, key="diag_tw_county")
 
             town_dict = taiwan_data.get(sel_county, {})
             town_list = list(town_dict.keys())
             default_t_idx = town_list.index("東勢區") if "東勢區" in town_list else 0
-            sel_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=default_t_idx if town_list else 0)
+            sel_town = st.selectbox("2. 選擇鄉鎮市區", options=town_list, index=default_t_idx if town_list else 0, key="diag_tw_town")
 
             st.write("")
             if st.button(f"📍 確認觀測：臺灣 {sel_county} {sel_town}", use_container_width=True, type="primary"):
@@ -977,18 +1012,18 @@ def render_location_dialog_content():
     else:
         continents = list(world_hierarchy.keys())
         default_cont_idx = continents.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents else 0
-        sel_cont = st.selectbox("1. 篩選大洲", options=continents, index=default_cont_idx)
+        sel_cont = st.selectbox("1. 篩選大洲", options=continents, index=default_cont_idx, key="diag_world_cont")
 
         countries_dict = world_hierarchy.get(sel_cont, {})
         country_list = sorted(list(countries_dict.keys()))
-        sel_country = st.selectbox("2. 挑選國家", options=country_list, index=0 if country_list else None)
+        sel_country = st.selectbox("2. 挑選國家", options=country_list, index=0 if country_list else None, key="diag_world_country")
 
         cities_dict = countries_dict.get(sel_country, {}) if sel_country else {}
         city_list = list(cities_dict.keys())
-        sel_city = st.selectbox("3. 挑選城市", options=city_list, index=0 if city_list else None)
+        sel_city = st.selectbox("3. 挑選城市", options=city_list, index=0 if city_list else None, key="diag_world_city")
 
-        if sel_city:
-            clean_c = sel_country.split('/')[0].strip() if sel_country else ""
+        if sel_city and sel_country:
+            clean_c = sel_country.split('/')[0].strip()
             clean_t = sel_city.split('(')[0].strip()
             st.write("")
             if st.button(f"📍 確認觀測：{clean_c} {clean_t}", use_container_width=True, type="primary"):
@@ -1167,9 +1202,9 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 未來 12 小時即時預報與 AI 變化趨勢
+# 15. 【已修正】未來 12 小時即時預報 (標題已精確更新)
 # -------------------------------------------------------------
-st.markdown("##### ⏱️ 未來 12 小時即時預報與 AI 變化趨勢")
+st.markdown("##### ⏱️ 未來 12 小時即時預報")
 
 if limit_h > 0:
     hourly_cards = []
@@ -1206,16 +1241,20 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 16. 未來一週 (7天) 展望
+# 16. 未來一週 (7天) 展望 (含日期安全解析保護)
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
     daily_cards = []
     for d_idx in range(limit_d):
         d_date_str = daily_dates[d_idx]
-        d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
-        d_weekday = weekdays_zh[d_obj.weekday()]
-        d_title = "今天" if d_idx == 0 else f"{d_obj.month}/{d_obj.day} ({d_weekday})"
+        try:
+            d_obj = datetime.strptime(d_date_str, "%Y-%m-%d")
+            d_weekday = weekdays_zh[d_obj.weekday()]
+            d_title = "今天" if d_idx == 0 else f"{d_obj.month}/{d_obj.day} ({d_weekday})"
+        except Exception:
+            d_title = f"第 {d_idx+1} 天"
+
         d_icon, d_cond = resolve_weather(daily_codes[d_idx])
         t_max, t_min = daily_max_t[d_idx], daily_min_t[d_idx]
         r_max = daily_rain_p[d_idx] if len(daily_rain_p) > d_idx else 0
@@ -1240,7 +1279,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 17. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
+# 17. 地圖置底呈現 (動態 Key 確保瞬移且防位移)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
