@@ -24,7 +24,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 僅隱藏右上角分享、星星、GitHub 等無關按鈕，嚴格保留左上角側邊欄按鈕 */
+    /* 1. 隱藏右上角分享、星星、GitHub 等無關按鈕，保留左上角側邊欄按鈕 */
     [data-testid="stToolbar"],
     .stAppDeployButton,
     #MainMenu,
@@ -45,14 +45,14 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* 頂部 Header 保持透明但維持高度以容納按鈕 */
+    /* 頂部 Header 保持透明 */
     header[data-testid="stHeader"] {
         background: transparent !important;
         height: 3.2rem !important;
         z-index: 9999 !important;
     }
 
-    /* 2. 【核心修復】強化左上角側邊欄展開按鈕的可見度與觸控範圍 */
+    /* 強化左上角側邊欄展開按鈕的可見度與觸控範圍 */
     [data-testid="collapsedControl"],
     button[kind="header"] {
         display: flex !important;
@@ -71,12 +71,8 @@ st.markdown("""
         align-items: center !important;
         justify-content: center !important;
     }
-    [data-testid="collapsedControl"]:hover {
-        background-color: #f0f9ff !important;
-        border-color: #0284c7 !important;
-    }
 
-    /* 3. 鎖定全域寬度防橫向破版 */
+    /* 2. 鎖定全域寬度防橫向破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -87,7 +83,7 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* 4. 邊距極致適配 */
+    /* 3. 邊距極致適配 */
     .block-container {
         padding-top: 0.6rem !important;
         padding-bottom: 2rem !important;
@@ -103,14 +99,7 @@ st.markdown("""
         }
     }
 
-    /* 5. 頂部 App 品牌標題欄 */
-    .app-brand-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        margin-top: 2px;
-    }
+    /* 4. 頂部 App 品牌標題欄 */
     .app-brand-title {
         font-size: 20px;
         font-weight: 800;
@@ -121,7 +110,7 @@ st.markdown("""
         gap: 6px;
     }
 
-    /* 6. 天氣自適應動態質感深藍大卡片 */
+    /* 5. 天氣自適應動態質感深藍大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -989,7 +978,7 @@ else:
         render_location_dialog_content()
 
 # -------------------------------------------------------------
-# 10. 側邊欄地點選單配置
+# 10. 側邊欄地點選單配置 (語法完全修復)
 # -------------------------------------------------------------
 is_at_home = (
     abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
@@ -1049,8 +1038,9 @@ with st.sidebar:
 
     with st.expander("🌍 全球城市直接切換", expanded=False):
         cont_list = list(world_hierarchy.keys())
-        def_cont = cont_list.index("亞洲 (Asia)") if "亞洲 (Asia)" in continents if 'continents' in locals() else 0
-        sb_cont = st.selectbox("大洲", cont_list, index=0, key="sb_world_cont")
+        # 此處已完全修復為正確的單一條件式
+        def_cont = cont_list.index("亞洲 (Asia)") if "亞洲 (Asia)" in cont_list else 0
+        sb_cont = st.selectbox("大洲", cont_list, index=def_cont, key="sb_world_cont")
         c_dict = world_hierarchy.get(sb_cont, {})
         c_list = sorted(list(c_dict.keys()))
         sb_country = st.selectbox("國家", c_list, index=0 if c_list else None, key="sb_world_country")
@@ -1070,13 +1060,12 @@ with st.sidebar:
                 st.rerun()
 
 # -------------------------------------------------------------
-# 11. 頂部雙重呼叫欄 (有標題 + 直覺呼叫地點按鈕)
+# 11. 頂部雙重呼叫欄 (標題 + 直接切換地區按鈕)
 # -------------------------------------------------------------
 c_head_title, c_head_btn = st.columns([3.5, 1.2])
 with c_head_title:
     st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 with c_head_btn:
-    # 雙重防呆：點擊此處也能直接彈出地點選單，免去找側邊欄箭頭的困擾！
     if st.button("🧭 切換地區", use_container_width=True, key="main_open_location"):
         open_location_dialog()
 
@@ -1202,7 +1191,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 未來 12 小時即時預報 (標題簡潔)
+# 15. 未來 12 小時即時預報
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 12 小時即時預報")
 
