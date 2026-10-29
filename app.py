@@ -31,7 +31,7 @@ st.markdown("""
         background: transparent;
     }
 
-    /* 手機版全局邊距收緊 */
+    /* 手機版面全局邊距優化 */
     @media (max-width: 768px) {
         .block-container {
             padding-top: 0.6rem !important;
@@ -39,182 +39,117 @@ st.markdown("""
             padding-left: 0.75rem !important;
             padding-right: 0.75rem !important;
         }
+
+        /* 強制頂部控制列在手機端保持單行橫向並列，不折行不變形 */
+        div[data-testid="stHorizontalBlock"]:first-of-type {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:first-child {
+            flex: 0 0 auto !important;
+            width: auto !important;
+        }
+        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(2) {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+        }
+        div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:last-child {
+            flex: 0 0 38px !important;
+            width: 38px !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:first-of-type button {
+            height: 36px !important;
+            min-height: 36px !important;
+            padding: 0 10px !important;
+            font-size: 13px !important;
+            border-radius: 18px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
     }
 
-    /* 頂部純淨品牌標題 */
+    /* 頂部膠囊按鈕質感微調 */
+    div[data-testid="stHorizontalBlock"]:first-of-type button {
+        border-radius: 20px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        color: #334155;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
+        border-color: #0284c7;
+        color: #0284c7;
+        background-color: #f0f9ff;
+    }
+
     .app-brand-title {
-        font-size: 21px;
+        font-size: 18px;
         font-weight: 800;
         color: #0f172a;
-        letter-spacing: -0.4px;
-        margin-bottom: 8px;
-        margin-top: 2px;
-    }
-
-    /* 【核心修正】天氣大卡片外框：100% 通用 CSS，徹底捨棄 :has()，保證在所有手機絕不掉色 */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18) !important;
-        padding: 16px 18px !important;
-        margin-bottom: 12px !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {
-        background: transparent !important;
-    }
-
-    /* 卡片內部頂部按鈕列：強制單行排列，在手機上絕對不折行 */
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 8px !important;
-        width: 100% !important;
-        margin-bottom: 6px !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child {
-        flex: 1 1 auto !important;
-        width: auto !important;
-        min-width: 0 !important;
-        display: flex !important;
-        justify-content: flex-start !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {
-        flex: 0 0 38px !important;
-        width: 38px !important;
-        max-width: 38px !important;
-        min-width: 38px !important;
-        display: flex !important;
-        justify-content: flex-end !important;
-    }
-
-    /* 卡片內地名按鈕：毛玻璃膠囊造型 */
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:first-child button {
-        background: rgba(0, 0, 0, 0.25) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.35) !important;
-        border-radius: 20px !important;
-        padding: 2px 14px !important;
-        font-size: 13.5px !important;
-        font-weight: 600 !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        backdrop-filter: blur(8px) !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
-        transition: all 0.2s ease !important;
-        width: fit-content !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:first-child button:hover {
-        background: rgba(0, 0, 0, 0.38) !important;
-        border-color: rgba(255, 255, 255, 0.6) !important;
-        color: #ffffff !important;
-        transform: translateY(-1px) !important;
-    }
-
-    /* 卡片內定位按鈕：毛玻璃圓形造型 */
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:last-child button {
-        background: rgba(0, 0, 0, 0.25) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.35) !important;
-        border-radius: 50% !important;
-        width: 34px !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 15px !important;
-        backdrop-filter: blur(8px) !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
-        transition: all 0.2s ease !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="column"]:last-child button:hover {
-        background: rgba(0, 0, 0, 0.38) !important;
-        border-color: rgba(255, 255, 255, 0.6) !important;
-        color: #ffffff !important;
-        transform: translateY(-1px) !important;
-    }
-
-    /* 3 大核心指標迷你卡網格 (降雨、紫外線、空污) */
-    .kpi-three-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 14px;
-    }
-    .kpi-mini-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 10px 4px;
-        text-align: center;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    .kpi-mini-title {
-        font-size: 11.5px;
-        color: #64748b;
-        font-weight: 600;
-        margin-bottom: 2px;
-    }
-    .kpi-mini-val {
-        font-size: 21px;
-        font-weight: 800;
-        color: #0f172a;
-        line-height: 1.15;
-        margin: 2px 0 4px 0;
-    }
-    .kpi-mini-badge {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 10px;
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        padding-right: 2px;
+    }
+
+    /* 招牌經典深藍色漸層大卡片 (Weather Hero Card) */
+    .weather-hero-card {
+        padding: 22px 24px;
+        border-radius: 20px;
+        color: white;
+        margin-top: 4px;
+        margin-bottom: 14px;
+        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25), 0 8px 10px -6px rgba(30, 58, 138, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    @media (max-width: 768px) {
+        .weather-hero-card {
+            padding: 18px 16px;
+        }
     }
 
     /* 橫向滑動卡片流 */
     .weather-scroll-row {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         overflow-x: auto;
-        padding: 4px 2px 12px 2px;
+        padding: 6px 2px 14px 2px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
     }
     .weather-scroll-row::-webkit-scrollbar {
-        height: 5px;
+        height: 6px;
     }
     .weather-scroll-row::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 5px;
+        border-radius: 6px;
     }
 
     .hourly-scroll-card {
-        flex: 0 0 95px;
+        flex: 0 0 105px;
         background: #ffffff;
         border: 1px solid #f1f5f9;
         border-radius: 14px;
-        padding: 10px 4px;
+        padding: 12px 6px;
         text-align: center;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
     .daily-scroll-card {
-        flex: 0 0 110px;
+        flex: 0 0 120px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
-        padding: 12px 6px;
+        padding: 14px 8px;
         text-align: center;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
 
     .map-frame-container {
@@ -237,7 +172,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區基底定位庫
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定定位庫 (保底 100% 精準度)
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -631,15 +566,15 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
         diff_note = ""
 
     if rain_prob >= 60:
-        intro_text = f"路面潮濕易滑（體感 {feels_like}°C{diff_note}），出門請隨身攜帶雨具並放慢車速。"
+        intro_text = f"路面潮濕易滑（體感 {feels_like:.1f}°C{diff_note}），出門請隨身攜帶雨具並放慢車速。"
     elif uv_val >= 8:
         intro_text = f"紫外線偏強（UV {uv_val:.1f}），外出請加強防曬並適時補充水分。"
     elif temp >= 29:
-        intro_text = f"體感偏熱（體感 {feels_like}°C{diff_note}），外出活動請防曬、多喝水預防中暑。"
+        intro_text = f"體感偏熱（體感 {feels_like:.1f}°C{diff_note}），外出活動請防曬、多喝水預防中暑。"
     elif temp <= 18:
-        intro_text = f"天氣偏涼（體感 {feels_like}°C{diff_note}），早晚溫差大，出門建議洋蔥式穿搭。"
+        intro_text = f"天氣偏涼（體感 {feels_like:.1f}°C{diff_note}），早晚溫差大，出門建議洋蔥式穿搭。"
     else:
-        intro_text = f"氣候舒適宜人（體感 {feels_like}°C{diff_note}），非常適宜外出踏青或戶外活動。"
+        intro_text = f"氣候舒適宜人（體感 {feels_like:.1f}°C{diff_note}），非常適宜外出踏青或戶外活動。"
 
     ref_temp = feels_like
     if ref_temp >= 28:
@@ -736,7 +671,7 @@ if "active_target" not in st.session_state:
     }
 
 # -------------------------------------------------------------
-# 8. 選擇觀測地區彈窗
+# 8. 選擇觀測地區彈窗 (純淨無多餘輸入格)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -835,18 +770,35 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部乾淨標題
-# -------------------------------------------------------------
-st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣</div>', unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# 10. 天氣資料獲取與運算
+# 9. 頂部精準導航列 (地名膠囊化與手機端單行固定)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
 active_lon = float(st.session_state.active_target["lon"])
+
 display_location_text = active_name.replace("📍 ", "").replace("目前所在地:", "")
 
+c_logo, c_capsule_btn, c_home_btn = st.columns([1.1, 2.2, 0.45], gap="small")
+
+with c_logo:
+    st.markdown('<div class="app-brand-title">🌤️ SkyCast</div>', unsafe_allow_html=True)
+
+with c_capsule_btn:
+    if st.button(f"📍 {display_location_text} ▾", use_container_width=True, help="點擊切換地點"):
+        show_cascading_selector_dialog()
+
+with c_home_btn:
+    if st.button("🎯", use_container_width=True, help="定位至目前設備位置"):
+        st.session_state.active_target = {
+            "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
+            "lat": float(st.session_state.my_home_location["lat"]),
+            "lon": float(st.session_state.my_home_location["lon"])
+        }
+        st.rerun()
+
+# -------------------------------------------------------------
+# 10. 天氣資料獲取與運算
+# -------------------------------------------------------------
 weather_data, aqi_data = fetch_weather_and_aqi(active_lat, active_lon)
 
 current = weather_data.get("current", {})
@@ -887,111 +839,40 @@ aqi_current = aqi_data.get("current", {})
 aqi_val = int(aqi_current.get("us_aqi", 35)) if aqi_current.get("us_aqi") is not None else 35
 pm25_val = aqi_current.get("pm2_5", 8.5)
 
-if cur_temp >= 28:
-    hero_bg = "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)"
-elif cur_temp <= 18:
-    hero_bg = "linear-gradient(135deg, #4b6cb7 0%, #182848 100%)"
+# 經典質感深海藍漸層
+if cur_temp >= 32:
+    hero_bg = "linear-gradient(135deg, #ea580c 0%, #f97316 100%)"  # 酷暑暖橘
+elif cur_temp <= 16:
+    hero_bg = "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)"  # 偏寒深藍
 else:
-    hero_bg = "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)"
+    hero_bg = "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)"  # 經典質感深海藍
 
 intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_status_str = get_comprehensive_assistant_advice(
     cur_temp, cur_feels, cur_rain, cur_hum, cur_wind, aqi_val, cur_uv
 )
 
 # -------------------------------------------------------------
-# 11. 3 大指標語意與動態配色計算 (降雨、紫外線、空污)
-# -------------------------------------------------------------
-if cur_rain >= 60:
-    r_status, r_bg, r_color = "高機率有雨", "#fee2e2", "#b91c1c"
-elif cur_rain >= 30:
-    r_status, r_bg, r_color = "局部短暫雨", "#fef3c7", "#b45309"
-else:
-    r_status, r_bg, r_color = "降雨機率低", "#f0fdf4", "#15803d"
-
-if cur_uv >= 8:
-    uv_badge_text, uv_bg, uv_color = f"過量 · UV {cur_uv:.1f}", "#fee2e2", "#b91c1c"
-elif cur_uv >= 6:
-    uv_badge_text, uv_bg, uv_color = f"高量 · UV {cur_uv:.1f}", "#ffedd5", "#c2410c"
-elif cur_uv >= 3:
-    uv_badge_text, uv_bg, uv_color = f"中量 · UV {cur_uv:.1f}", "#fef3c7", "#b45309"
-else:
-    uv_badge_text, uv_bg, uv_color = f"微量 · UV {cur_uv:.1f}", "#f0fdf4", "#15803d"
-
-if aqi_val >= 150:
-    aqi_badge_text, aqi_bg, aqi_color = f"有害 · AQI {aqi_val}", "#fee2e2", "#b91c1c"
-elif aqi_val >= 101:
-    aqi_badge_text, aqi_bg, aqi_color = f"敏感 · AQI {aqi_val}", "#ffedd5", "#c2410c"
-elif aqi_val >= 51:
-    aqi_badge_text, aqi_bg, aqi_color = f"普通 · AQI {aqi_val}", "#fef3c7", "#b45309"
-else:
-    aqi_badge_text, aqi_bg, aqi_color = f"良好 · AQI {aqi_val}", "#f0fdf4", "#15803d"
-
-# 【關鍵核心修復】直接為唯一的邊框容器注入漸層色，保證 100% 呈現藍色漸層背景
-st.markdown(f"""
-<style>
-div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background: {hero_bg} !important;
-}}
-</style>
-""", unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# 12. 【第一優先展示】天氣概況藍色大卡片 (內建點擊搜尋地標 + 定位鈕)
-# -------------------------------------------------------------
-with st.container(border=True):
-    col_loc, col_gps = st.columns([5, 1])
-    with col_loc:
-        # 地標按鈕本身點擊即跳出搜尋視窗
-        if st.button(f"📍 {display_location_text}  ▾", key="hero_loc_btn", help="點擊搜尋或切換其他地點"):
-            show_cascading_selector_dialog()
-            
-    with col_gps:
-        # 右上角內嵌圓形定位按鈕
-        if st.button("🎯", key="hero_gps_btn", help="點擊返回目前設備 GPS 所在地"):
-            st.session_state.active_target = {
-                "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
-                "lat": float(st.session_state.my_home_location["lat"]),
-                "lon": float(st.session_state.my_home_location["lon"])
-            }
-            st.rerun()
-
-    # 溫度、天氣狀況、風速與濕度（高對比白字）
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; color: white !important;">
-            <div>
-                <div style="font-size: 38px; font-weight: 800; line-height: 1.1; color: white !important;">{icon} {cur_temp:.1f}°C</div>
-                <div style="font-size: 15.5px; opacity: 0.95; margin-top: 5px; color: white !important;">{condition} · 體感約 {cur_feels:.1f}°C</div>
-            </div>
-            <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.65; color: white !important;">
-                <div style="color: white !important;">💨 風速 <strong style="color: white !important;">{cur_wind} km/h</strong></div>
-                <div style="color: white !important;">💧 濕度 <strong style="color: white !important;">{cur_hum}%</strong></div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# -------------------------------------------------------------
-# 13. 【第二展示】天氣概況正下方 3 大指標迷你卡
+# 11. 【核心展示】原汁原味經典藍色氣象大卡片 (The Blue Block)
 # -------------------------------------------------------------
 st.markdown(
     f"""
-    <div class="kpi-three-grid">
-        <div class="kpi-mini-card">
-            <div class="kpi-mini-title">💧 降雨機率</div>
-            <div class="kpi-mini-val">{cur_rain}%</div>
-            <div class="kpi-mini-badge" style="background: {r_bg}; color: {r_color};">{r_status}</div>
-        </div>
-        <div class="kpi-mini-card">
-            <div class="kpi-mini-title">☀️ 紫外線</div>
-            <div class="kpi-mini-val">{cur_uv:.1f}</div>
-            <div class="kpi-mini-badge" style="background: {uv_bg}; color: {uv_color};">{uv_badge_text}</div>
-        </div>
-        <div class="kpi-mini-card">
-            <div class="kpi-mini-title">🍃 空氣品質</div>
-            <div class="kpi-mini-val">{aqi_val}</div>
-            <div class="kpi-mini-badge" style="background: {aqi_bg}; color: {aqi_color};">{aqi_badge_text}</div>
+    <div class="weather-hero-card" style="background: {hero_bg};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 38px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;">
+                    {icon} {cur_temp:.1f}°C
+                </div>
+                <div style="font-size: 16px; opacity: 0.95; margin-top: 6px; font-weight: 500;">
+                    {condition} · 體感 {cur_feels:.1f}°C
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.75;">
+                <div>💧 降雨機率 <strong>{cur_rain}%</strong> | 濕度 <strong>{cur_hum}%</strong></div>
+                <div>💨 風速 <strong>{cur_wind} km/h</strong></div>
+                <div style="margin-top: 6px; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,0.22); display: inline-block; font-size: 12.5px;">
+                    ☀️ 紫外線 <strong>{cur_uv:.1f}</strong> ({uv_status_str}) | 🍃 AQI <strong>{aqi_val}</strong>
+                </div>
+            </div>
         </div>
     </div>
     """,
@@ -999,7 +880,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 14. 【第三展示】生活小幫手 (簡約重點摘要 + 預設折疊)
+# 12. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1010,7 +891,7 @@ with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
 with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
     st.markdown(d_desc)
 
-with st.expander(f"🏃 **運動與出行提醒**：戶外活動與通勤指引", expanded=False):
+with st.expander(f"🏃 **運動與出行指引**", expanded=False):
     st.markdown(f"**🏃 戶外活動與運動**\n\n{sport_tip}")
     st.markdown(f"**🛵 通勤出行建議**\n\n{commute_tip}")
 
@@ -1020,7 +901,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 未來 6 小時即時預報趨勢
+# 13. 未來 6 小時即時預報趨勢
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 6 小時即時預報趨勢")
 
@@ -1052,7 +933,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 16. 未來一週 (7天) 展望
+# 14. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1086,7 +967,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 17. 地圖置底呈現 (綁定動態 Key 確保切換地點即時瞬移)
+# 15. 地圖置底呈現 (動態 Key 確保切換鄉鎮即時瞬移置中)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
