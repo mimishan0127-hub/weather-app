@@ -23,7 +23,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 嚴格鎖死全域寬度 */
+    /* 1. 嚴格鎖死視窗全域寬度，徹底根除橫向滾動條 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -36,7 +36,7 @@ st.markdown("""
         background: transparent;
     }
 
-    /* 2. 邊距微調 */
+    /* 2. 邊距極致適配 */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
@@ -44,16 +44,15 @@ st.markdown("""
         padding-right: 1rem !important;
     }
 
-    /* 3. 核心修復：強制擊碎 Streamlit 手機端 column 100% 寬度限制 */
     @media (max-width: 768px) {
         .block-container {
             padding-top: 0.5rem !important;
             padding-bottom: 1.5rem !important;
-            padding-left: 0.6rem !important;
-            padding-right: 0.6rem !important;
+            padding-left: 0.65rem !important;
+            padding-right: 0.65rem !important;
         }
 
-        /* 鎖定頂部第一組欄位列為單行 Flexbox */
+        /* 頂部單行佈局鎖定 */
         div[data-testid="stHorizontalBlock"]:first-of-type {
             display: flex !important;
             flex-direction: row !important;
@@ -63,10 +62,10 @@ st.markdown("""
             gap: 6px !important;
             width: 100% !important;
             max-width: 100% !important;
-            margin-bottom: 8px !important;
+            margin-bottom: 4px !important;
         }
 
-        /* 徹底覆蓋 Streamlit 手機端的 min-width: 100% */
+        /* 覆蓋 Streamlit 手機端的 min-width: 100% 限制 */
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"] {
             width: auto !important;
             min-width: 0 !important;
@@ -74,77 +73,64 @@ st.markdown("""
             padding: 0 !important;
         }
 
-        /* 欄位 1: Logo (依文字自適應) */
+        /* 左側品牌名稱 */
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(1) {
-            flex: 0 0 auto !important;
-            width: auto !important;
+            flex: 1 1 auto !important;
         }
 
-        /* 欄位 2: 地名按鈕 (吃滿中間剩餘寬度，超長自動 ... 省略) */
+        /* 右側 🔍 放大鏡按鈕欄位 */
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(2) {
-            flex: 1 1 0% !important;
-            min-width: 0 !important;
-            overflow: hidden !important;
+            flex: 0 0 40px !important;
+            width: 40px !important;
         }
 
-        /* 欄位 3: 定位按鈕 (固定圓形尺寸) */
+        /* 右側 📍 圖釘按鈕欄位 */
         div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:nth-child(3) {
-            flex: 0 0 38px !important;
-            width: 38px !important;
-            min-width: 38px !important;
-        }
-
-        /* 手機按鈕內部樣式強制防溢出 */
-        div[data-testid="stHorizontalBlock"]:first-of-type button {
-            height: 36px !important;
-            min-height: 36px !important;
-            padding: 0 8px !important;
-            width: 100% !important;
-            border-radius: 18px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        div[data-testid="stHorizontalBlock"]:first-of-type button p {
-            font-size: 13px !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            margin: 0 !important;
-            text-align: center !important;
+            flex: 0 0 40px !important;
+            width: 40px !important;
         }
     }
 
-    /* 頂部按鈕質感微調 */
+    /* 頂部精巧圓形圖標按鈕 (放大鏡與圖釘) */
     div[data-testid="stHorizontalBlock"]:first-of-type button {
-        border-radius: 20px;
-        border: 1px solid #cbd5e1;
-        background-color: #ffffff;
-        color: #334155;
-        font-weight: 500;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        transition: all 0.2s ease;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s ease !important;
     }
     div[data-testid="stHorizontalBlock"]:first-of-type button:hover {
-        border-color: #0284c7;
-        color: #0284c7;
-        background-color: #f0f9ff;
+        border-color: #0284c7 !important;
+        background-color: #f0f9ff !important;
+        transform: translateY(-1px);
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type button p {
+        font-size: 16px !important;
+        margin: 0 !important;
+        line-height: 1 !important;
     }
 
     .app-brand-title {
-        font-size: 17.5px;
+        font-size: 20px;
         font-weight: 800;
         color: #0f172a;
         white-space: nowrap;
         display: flex;
         align-items: center;
         letter-spacing: -0.3px;
-        padding-right: 4px;
     }
 
-    /* 4. 天氣自適應動態質感深藍大卡片 */
+    /* 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
-        padding: 22px 24px;
+        padding: 20px 22px;
         border-radius: 20px;
         color: white;
         margin-top: 4px;
@@ -155,7 +141,7 @@ st.markdown("""
     }
     @media (max-width: 768px) {
         .weather-hero-card {
-            padding: 18px 16px;
+            padding: 16px 14px;
             border-radius: 16px;
         }
     }
@@ -905,30 +891,30 @@ else:
         render_selector_body()
 
 # -------------------------------------------------------------
-# 9. 頂部精準導航列 (嚴格 100% 容器鎖定)
+# 9. 頂部導航列：改為「純圖標 🔍 放大鏡 + 📍 圖釘」(100% 絕對不超出版面)
 # -------------------------------------------------------------
 active_name = st.session_state.active_target["name"]
 active_lat = float(st.session_state.active_target["lat"])
 active_lon = float(st.session_state.active_target["lon"])
 
-# 精簡多餘冗贅字樣，保留最關鍵地名（確保手機按鈕內 100% 容納）
+# 提取乾淨地名以顯示於氣象大卡片內
 display_location_text = (
     active_name.replace("📍 ", "")
     .replace("目前所在地:", "")
     .replace("臺灣 ", "")
 )
 
-c_logo, c_capsule_btn, c_home_btn = st.columns([1.0, 2.3, 0.45], gap="small")
+c_logo, c_search_btn, c_home_btn = st.columns([4.0, 0.6, 0.6], gap="small")
 
 with c_logo:
     st.markdown('<div class="app-brand-title">🌤️ SkyCast</div>', unsafe_allow_html=True)
 
-with c_capsule_btn:
-    if st.button(f"📍 {display_location_text} ▾", use_container_width=True, help="點擊切換地點"):
+with c_search_btn:
+    if st.button("🔍", use_container_width=True, help="點擊搜尋或切換城市地區"):
         show_cascading_selector_dialog()
 
 with c_home_btn:
-    if st.button("🎯", use_container_width=True, help="定位至目前設備位置"):
+    if st.button("📍", use_container_width=True, help="一鍵回到目前設備所在真實位置"):
         st.session_state.active_target = {
             "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
             "lat": float(st.session_state.my_home_location["lat"]),
@@ -987,18 +973,26 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 11. 【核心焦點】自適應高質感動態深藍氣象大卡片
+# 11. 【核心焦點】自適應高質感動態深藍氣象大卡片 (包含地名標示)
 # -------------------------------------------------------------
 st.markdown(
     f"""
     <div class="weather-hero-card" style="{hero_card_style}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-size: 17px; font-weight: 700; opacity: 0.95; display: flex; align-items: center; gap: 4px;">
+                📍 {display_location_text}
+            </div>
+            <div style="font-size: 12.5px; opacity: 0.9; background: rgba(0,0,0,0.22); padding: 2px 8px; border-radius: 6px;">
+                {condition}
+            </div>
+        </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
                 <div style="font-size: 38px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;">
                     {icon} {cur_temp:.1f}°C
                 </div>
-                <div style="font-size: 15.5px; opacity: 0.95; margin-top: 5px; font-weight: 500;">
-                    {condition} · 體感 {cur_feels:.1f}°C
+                <div style="font-size: 14.5px; opacity: 0.95; margin-top: 4px; font-weight: 500;">
+                    體感約 {cur_feels:.1f}°C
                 </div>
             </div>
             <div style="text-align: right; font-size: 13.5px; opacity: 0.95; line-height: 1.65;">
