@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # -------------------------------------------------------------
-# 1. 頁面全域配置與絕對響應式樣式 (根除手機橫向破版)
+# 1. 頁面全域配置與頂級極簡響應式樣式
 # -------------------------------------------------------------
 st.set_page_config(
     page_title="SkyCast 全球天氣生活管家",
@@ -23,82 +23,111 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* 1. 嚴格鎖死視窗全域寬度，徹底根除橫向滾動條 */
+    /* 1. 嚴格鎖死視窗全域寬度，徹底根除任何橫向滑動與破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
         overflow-x: hidden !important;
         box-sizing: border-box !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        color: #1e293b;
+        color: #0f172a;
+        background-color: #f8fafc;
     }
     header[data-testid="stHeader"] {
         background: transparent;
     }
 
-    /* 2. 邊距極致適配 */
+    /* 2. 邊距深度優化 */
     .block-container {
-        padding-top: 0.8rem !important;
-        padding-bottom: 2rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+        padding-bottom: 2.2rem !important;
+        padding-left: 1.2rem !important;
+        padding-right: 1.2rem !important;
     }
-
     @media (max-width: 768px) {
         .block-container {
-            padding-top: 0.5rem !important;
-            padding-bottom: 1.5rem !important;
+            padding-top: 0.6rem !important;
+            padding-bottom: 1.6rem !important;
             padding-left: 0.65rem !important;
             padding-right: 0.65rem !important;
         }
     }
 
-    /* 3. 頂部地點控制「小分頁」質感設計 (iOS Segmented Control 質感) */
+    /* 3. 頂部 App 品牌標題質感 */
+    .app-brand-title {
+        font-size: 21px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    /* 4. 頂部小分頁極致美化 (iOS Segmented Control 旗艦質感，徹底移除紅線) */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px !important;
-        background-color: #f1f5f9 !important;
+        background-color: #e2e8f0 !important;
         padding: 4px !important;
         border-radius: 14px !important;
-        margin-bottom: 8px !important;
+        gap: 4px !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        border: 1px solid #cbd5e1 !important;
     }
     .stTabs [data-baseweb="tab"] {
         flex: 1 1 0% !important;
-        height: 36px !important;
+        height: 38px !important;
         border-radius: 10px !important;
-        font-size: 13.5px !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
-        color: #475569 !important;
-        padding: 0 10px !important;
+        color: #64748b !important;
         background-color: transparent !important;
         border: none !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     .stTabs [aria-selected="true"] {
         background-color: #ffffff !important;
         color: #0284c7 !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+        font-weight: 700 !important;
     }
+    /* 徹底隱藏原生醜陋的紅色底線與邊框 */
+    .stTabs [data-baseweb="tab-highlight"],
     .stTabs [data-baseweb="tab-border"] {
         display: none !important;
     }
 
-    .app-brand-title {
-        font-size: 20px;
-        font-weight: 800;
-        color: #0f172a;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        letter-spacing: -0.3px;
-        margin-bottom: 6px;
+    /* 5. 分頁內容質感卡片容器 */
+    .tab-content-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 16px;
+        margin-top: 6px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
     }
 
-    /* 4. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
+    /* 快捷推薦小膠囊按鈕 */
+    .quick-chip-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    /* 6. 天氣自適應動態質感深藍大卡片 (The Weather Hero Card) */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -200,13 +229,14 @@ st.markdown("""
     }
 
     .compact-tip-box {
-        background: #f8fafc;
+        background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 10px 14px;
+        padding: 11px 15px;
         margin-bottom: 10px;
         font-size: 13.5px;
         color: #334155;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
     .vega-bind, .vg-tooltip {
@@ -216,7 +246,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定定位庫
+# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -765,15 +795,91 @@ taiwan_data, flattened_index = get_taiwan_and_search_index()
 world_hierarchy = load_all_cities_hierarchy()
 
 # -------------------------------------------------------------
-# 8. 頂部導航與「小分頁」地點控制系統 (100% 寬度自適應防溢出)
+# 8. 頂部地點控制：【目前位置】與【其他地區】極簡小分頁系統
 # -------------------------------------------------------------
 st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
 
-# 依使用者需求，以「小分頁」完美替代原本會跑出螢幕外的按鈕
-tab_search, tab_gps = st.tabs(["🔍 搜尋與切換地點", "📍 回到目前設備定位"])
+# 依使用者需求：互換分頁順序，名稱精簡為「目前位置」與「其他地區」
+tab_current, tab_other = st.tabs(["📍 目前位置", "🌍 其他地區"])
 
-with tab_search:
-    search_query = st.text_input("輸入地名關鍵字 (例如: 東勢、板橋、新宿、巴黎、London)", placeholder="請輸入地名...", key="main_search_input")
+# 【分頁 1：目前位置】
+with tab_current:
+    is_at_home = (
+        abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
+        abs(st.session_state.active_target["lon"] - st.session_state.my_home_location["lon"]) < 0.001
+    )
+    
+    st.markdown(
+        f"""
+        <div class="tab-content-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 12px; color: #64748b; font-weight: 600;">📡 設備 GPS 定位地點</div>
+                    <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 2px;">
+                        📍 {st.session_state.my_home_location['name']}
+                    </div>
+                </div>
+                <div>
+                    {'<span style="font-size: 12px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 4px 10px; border-radius: 20px;">● 觀測中</span>' if is_at_home else '<span style="font-size: 12px; color: #94a3b8; font-weight: 500;">非目前視角</span>'}
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    if not is_at_home:
+        if st.button("🎯 回到目前設備定位進行觀測", use_container_width=True, type="primary", key="btn_return_home"):
+            st.session_state.active_target = {
+                "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
+                "lat": float(st.session_state.my_home_location["lat"]),
+                "lon": float(st.session_state.my_home_location["lon"])
+            }
+            st.rerun()
+
+# 【分頁 2：其他地區】(先提示想查詢地點，支援搜尋 + 熱門快捷 + 階層選單)
+with tab_other:
+    st.markdown(
+        """
+        <div style="margin: 4px 0 8px 2px;">
+            <span style="font-size: 14px; font-weight: 700; color: #0f172a;">🔍 想查詢哪裡的天氣？</span>
+            <span style="font-size: 12px; color: #64748b; margin-left: 6px;">請直接搜尋或於下方點選</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # 1. 核心搜尋框
+    search_query = st.text_input(
+        "輸入地名搜尋",
+        placeholder="請輸入鄉鎮或城市，例如：東勢、板橋、新宿、巴黎、London...",
+        label_visibility="collapsed",
+        key="search_other_input"
+    )
+
+    # 2. 快捷熱門地點標籤 (一鍵即時切換)
+    st.markdown("<div style='font-size: 12px; color: #64748b; font-weight: 600; margin: 8px 0 4px 2px;'>⚡ 熱門推薦地點：</div>", unsafe_allow_html=True)
+    c_q1, c_q2, c_q3, c_q4, c_q5, c_q6 = st.columns(6)
+    quick_targets = [
+        ("臺中 東勢", 24.2586, 120.8283),
+        ("新北 板橋", 25.0125, 121.4657),
+        ("臺北 中正", 25.0324, 121.5190),
+        ("高雄 苓雅", 22.6273, 120.3014),
+        ("日本 東京", 35.6762, 139.6503),
+        ("法國 巴黎", 48.8566, 2.3522)
+    ]
+    for idx, (q_name, q_lat, q_lon) in enumerate(quick_targets):
+        col = [c_q1, c_q2, c_q3, c_q4, c_q5, c_q6][idx]
+        with col:
+            if st.button(q_name, key=f"quick_{idx}", use_container_width=True):
+                st.session_state.active_target = {
+                    "name": f"📍 {q_name}",
+                    "lat": q_lat,
+                    "lon": q_lon
+                }
+                st.rerun()
+
+    # 3. 搜尋結果呈現
     if search_query.strip():
         q = search_query.strip().lower()
         matched = [item for item in flattened_index if q in item[0].lower()]
@@ -791,8 +897,9 @@ with tab_search:
                         }
                         st.rerun()
         else:
-            st.info("查無符合地點，請嘗試其他關鍵字或至下方選單點選。")
-            
+            st.info("查無符合地點，請嘗試輸入其他關鍵字或至下方選單挑選。")
+
+    # 4. 完整的臺灣與全球階層選單 (折疊式收納，質感整潔)
     with st.expander("📂 臺灣縣市鄉鎮 / 全球大洲城市 分類點選", expanded=False):
         c_sub1, c_sub2 = st.columns(2)
         with c_sub1:
@@ -831,16 +938,6 @@ with tab_search:
                         "lon": float(coords[1])
                     }
                     st.rerun()
-
-with tab_gps:
-    st.caption(f"目前設備偵測位置：**{st.session_state.my_home_location['name']}**")
-    if st.button("🎯 一鍵切換回目前設備所在位置", use_container_width=True, type="primary", key="btn_gps_tab"):
-        st.session_state.active_target = {
-            "name": f"📍 目前所在地:{st.session_state.my_home_location['name']}",
-            "lat": float(st.session_state.my_home_location["lat"]),
-            "lon": float(st.session_state.my_home_location["lon"])
-        }
-        st.rerun()
 
 # -------------------------------------------------------------
 # 9. 天氣資料獲取與運算
@@ -909,7 +1006,7 @@ st.markdown(
     f"""
     <div class="weather-hero-card" style="{hero_card_style}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <div style="font-size: 17px; font-weight: 700; opacity: 0.95; display: flex; align-items: center; gap: 4px;">
+            <div style="font-size: 17.5px; font-weight: 700; opacity: 0.95; display: flex; align-items: center; gap: 4px;">
                 📍 {display_location_text}
             </div>
             <div style="font-size: 12.5px; opacity: 0.9; background: rgba(0,0,0,0.22); padding: 2px 8px; border-radius: 6px;">
@@ -1041,7 +1138,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 14. 地圖置底呈現 (強制鎖死 100% 寬度自適應)
+# 14. 地圖置底呈現 (強制鎖死 100% 容器寬度自適應)
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
