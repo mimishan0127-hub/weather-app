@@ -45,6 +45,23 @@ st.markdown("""
         padding: 0 !important;
     }
 
+    /* 隱藏 Vega/Altair 圖表在手機觸控時卡住的提示框 (Tooltip) 與圖表工具按鈕 */
+    #vg-tooltip-element,
+    .vega-tooltip,
+    div[class*="vega-tooltip"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    
+    /* 讓圖表不阻擋手機滑動，滑過時不觸發任何浮動視窗 */
+    [data-testid="stVegaLiteChart"] {
+        pointer-events: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+    }
+
     /* 頂部 Header 保持透明 */
     header[data-testid="stHeader"] {
         background: transparent !important;
