@@ -1241,9 +1241,9 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 15. 【生活小幫手】(預設收折，整齊俐落)
+# 15. 【小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
-st.markdown("##### 💡 生活小幫手")
+st.markdown("##### 💡 小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
 
 with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
