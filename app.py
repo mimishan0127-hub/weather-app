@@ -1132,7 +1132,7 @@ with st.sidebar:
 # -------------------------------------------------------------
 c_head_title, c_head_btn = st.columns([3.5, 1.2])
 with c_head_title:
-    st.markdown('<div class="app-brand-title">🌤️ SkyCast 全球天氣生活管家</div>', unsafe_allow_html=True)
+    st.markdown('<div class="app-brand-title">🌤️ 天氣小管家</div>', unsafe_allow_html=True)
 with c_head_btn:
     if st.button("🧭 切換地區", use_container_width=True, key="main_open_location"):
         open_location_dialog()
