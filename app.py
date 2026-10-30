@@ -16,7 +16,7 @@ from datetime import datetime
 # 1. 頁面全域配置 (側邊欄預設收折)
 # -------------------------------------------------------------
 st.set_page_config(
-    page_title="SkyCast 全球天氣生活管家",
+    page_title="天氣小管家",
     page_icon="🌤️",
     layout="wide",
     initial_sidebar_state="collapsed"
