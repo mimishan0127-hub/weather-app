@@ -864,7 +864,7 @@ def generate_12h_ai_summary(times, temps, rains, codes):
         <div class="ai-summary-card">
             <div class="ai-summary-header">
                 <span style="font-size: 17px;">🤖</span>
-                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
+                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化</span>
             </div>
             <div class="ai-summary-body">
                 <div>資料同步中，請稍候刷新即可取得即時洞察。</div>
@@ -920,7 +920,7 @@ def generate_12h_ai_summary(times, temps, rains, codes):
         <div class="ai-summary-card">
             <div class="ai-summary-header">
                 <span style="font-size: 17px;">🤖</span>
-                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化洞察</span>
+                <span style="font-weight: 700; font-size: 14.5px; color: #0284c7;">AI 氣象管家 · 12H 變化</span>
             </div>
             <div class="ai-summary-body">
                 <div class="ai-summary-item">
@@ -1252,7 +1252,7 @@ with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
 with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
     st.markdown(d_desc)
 
-with st.expander(f"🏃 **運動與出行**", expanded=False):
+with st.expander(f"🏃 **運動出行**", expanded=False):
     st.markdown(f"**🏃 戶外活動**\n\n{sport_tip}")
     st.markdown(f"**🛵 通勤出行**\n\n{commute_tip}")
 
@@ -1382,7 +1382,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 19. 【新增】即時降雨警示與雷達迴波圖
 # -------------------------------------------------------------
 st.markdown("---")
-st.markdown("##### 🌧️ 即時降雨警示與雷達迴波觀測")
+st.markdown("##### 🌧️ 即時降雨警示與雷達迴波")
 
 # 1. 降雨警示運算邏輯
 next_3h_rains = rains[:3] if rains else [0]
