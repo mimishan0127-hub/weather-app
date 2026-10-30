@@ -1252,11 +1252,11 @@ with st.expander(f"👕 **穿著建議**：{w_head}", expanded=False):
 with st.expander(f"🧺 **曬衣指引**：{d_head}", expanded=False):
     st.markdown(d_desc)
 
-with st.expander(f"🏃 **運動與出行指引**", expanded=False):
-    st.markdown(f"**🏃 戶外活動與運動**\n\n{sport_tip}")
-    st.markdown(f"**🛵 通勤出行建議**\n\n{commute_tip}")
+with st.expander(f"🏃 **運動與出行**", expanded=False):
+    st.markdown(f"**🏃 戶外活動**\n\n{sport_tip}")
+    st.markdown(f"**🛵 通勤出行**\n\n{commute_tip}")
 
-with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
+with st.expander(f"🎒 **生活建議**", expanded=False):
     st.markdown(" · ".join(pack_items))
 
 st.markdown("---")
