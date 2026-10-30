@@ -72,7 +72,33 @@ st.markdown("""
         justify-content: center !important;
     }
 
-    /* 2. 鎖定全域寬度防橫向破版 */
+    /* 2. 【核心美化】防止下拉選單在手機上被當成輸入框，隱藏游標並確保選單層級 */
+    div[data-baseweb="select"] input {
+        caret-color: transparent !important;
+        cursor: pointer !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+    }
+
+    /* 確保下拉清單擁有充足高度且平滑滾動 */
+    div[data-baseweb="popover"] {
+        z-index: 99999999 !important;
+    }
+    div[data-baseweb="menu"], ul[role="listbox"] {
+        max-height: 48vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 對話框在手機上適度留白，防止貼底 */
+    div[data-testid="stDialog"] div[role="dialog"] {
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        padding-bottom: 24px !important;
+        border-radius: 20px !important;
+    }
+
+    /* 3. 鎖定全域寬度防橫向破版 */
     html, body, [data-testid="stAppViewContainer"], .main, .block-container {
         max-width: 100vw !important;
         width: 100% !important;
@@ -83,7 +109,7 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* 3. 邊距極致適配 */
+    /* 4. 邊距極致適配 */
     .block-container {
         padding-top: 0.6rem !important;
         padding-bottom: 2rem !important;
@@ -99,7 +125,7 @@ st.markdown("""
         }
     }
 
-    /* 4. 頂部 App 品牌標題欄 */
+    /* 5. 頂部 App 品牌標題欄 */
     .app-brand-title {
         font-size: 20px;
         font-weight: 800;
@@ -110,7 +136,7 @@ st.markdown("""
         gap: 6px;
     }
 
-    /* 5. 天氣自適應動態質感深藍大卡片 */
+    /* 6. 天氣自適應動態質感深藍大卡片 */
     .weather-hero-card {
         padding: 22px 24px;
         border-radius: 20px;
@@ -262,7 +288,51 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 2. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
+# 2. 【核心修復】JavaScript 深度穿透：鎖定選單、徹底禁止手機彈出鍵盤
+# -------------------------------------------------------------
+components.html("""
+<script>
+    const lockMobileKeyboard = () => {
+        try {
+            const targetDoc = window.parent.document || window.top.document;
+            if (!targetDoc) return;
+
+            // 1. 抓取所有選單內部的 input，強制設定 inputmode="none" 與 readonly
+            const selectInputs = targetDoc.querySelectorAll('div[data-baseweb="select"] input, input[role="combobox"]');
+            selectInputs.forEach(input => {
+                if (input.getAttribute('inputmode') !== 'none') {
+                    input.setAttribute('inputmode', 'none');
+                    input.setAttribute('readonly', 'readonly');
+                }
+            });
+
+            // 2. 隱藏原生浮水印與多餘按鈕
+            const badgeSelectors = [
+                '[class*="viewerBadge"]',
+                '[data-testid="stStatusWidget"]',
+                '[data-testid="manage-app-button"]',
+                '#manage-app-button'
+            ];
+            badgeSelectors.forEach(sel => {
+                const elements = targetDoc.querySelectorAll(sel);
+                elements.forEach(el => {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                });
+            });
+        } catch (e) {
+            // 忽略跨來源例外
+        }
+    };
+
+    // 啟動定時監聽，只要彈窗打開立即將新出現的選單上鎖
+    lockMobileKeyboard();
+    setInterval(lockMobileKeyboard, 200);
+</script>
+""", height=0, width=0)
+
+# -------------------------------------------------------------
+# 3. 臺灣全境 22 縣市 368 鄉鎮市區法定基底庫
 # -------------------------------------------------------------
 BUILTIN_TAIWAN_DATA = {
     "臺北市": {
@@ -428,7 +498,7 @@ BUILTIN_TAIWAN_DATA = {
 }
 
 # -------------------------------------------------------------
-# 3. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
+# 4. 原生零依賴 XLSX 解構引擎 (Zero-Dependency)
 # -------------------------------------------------------------
 def parse_xlsx_without_packages(filename):
     with zipfile.ZipFile(filename, 'r') as z:
@@ -563,7 +633,7 @@ def load_all_cities_hierarchy():
 load_world_cities_hierarchy = load_all_cities_hierarchy
 
 # -------------------------------------------------------------
-# 4. 資料庫整合
+# 5. 資料庫整合
 # -------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def get_taiwan_and_search_index():
@@ -590,7 +660,7 @@ def get_taiwan_and_search_index():
     return taiwan_data, hierarchy
 
 # -------------------------------------------------------------
-# 5. 氣候與空氣品質 API
+# 6. 氣候與空氣品質 API
 # -------------------------------------------------------------
 WEATHER_SPECS = {
     0: ("☀️", "晴朗無雲"),
@@ -694,7 +764,7 @@ def fetch_weather_and_aqi(lat: float, lon: float):
     return weather_res, aqi_res
 
 # -------------------------------------------------------------
-# 6. 生活管家決策引擎
+# 7. 生活管家決策引擎
 # -------------------------------------------------------------
 def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wind_speed, aqi_val, uv_val):
     uv_status, uv_tip = parse_uv_level(uv_val)
@@ -787,7 +857,7 @@ def get_comprehensive_assistant_advice(temp, feels_like, rain_prob, humidity, wi
     return intro_text, wear_headline, wear_desc, dry_headline, dry_desc, sport_status, commute_tip, pack_items, uv_status
 
 # -------------------------------------------------------------
-# 7. AI 12小時氣象洞察分析引擎
+# 8. AI 12小時氣象洞察分析引擎
 # -------------------------------------------------------------
 def generate_12h_ai_summary(times, temps, rains, codes):
     if not times or not temps or len(temps) == 0:
@@ -873,7 +943,7 @@ def generate_12h_ai_summary(times, temps, rains, codes):
         return "<div class='ai-summary-card'>AI 氣象管家正連線中...</div>"
 
 # -------------------------------------------------------------
-# 8. 所在地狀態持久化
+# 9. 所在地狀態持久化
 # -------------------------------------------------------------
 if "my_home_location" not in st.session_state:
     st.session_state.my_home_location = {
@@ -907,7 +977,7 @@ if "active_target" not in st.session_state:
 taiwan_data, world_hierarchy = get_taiwan_and_search_index()
 
 # -------------------------------------------------------------
-# 9. 階層式選擇視窗
+# 10. 階層式選擇視窗 (全選單上鎖防彈出鍵盤)
 # -------------------------------------------------------------
 dialog_decorator = getattr(st, "dialog", getattr(st, "experimental_dialog", None))
 
@@ -978,7 +1048,7 @@ else:
         render_location_dialog_content()
 
 # -------------------------------------------------------------
-# 10. 側邊欄地點選單配置 (語法完全修復)
+# 11. 側邊欄地點選單配置
 # -------------------------------------------------------------
 is_at_home = (
     abs(st.session_state.active_target["lat"] - st.session_state.my_home_location["lat"]) < 0.001 and 
@@ -1038,7 +1108,6 @@ with st.sidebar:
 
     with st.expander("🌍 全球城市直接切換", expanded=False):
         cont_list = list(world_hierarchy.keys())
-        # 此處已完全修復為正確的單一條件式
         def_cont = cont_list.index("亞洲 (Asia)") if "亞洲 (Asia)" in cont_list else 0
         sb_cont = st.selectbox("大洲", cont_list, index=def_cont, key="sb_world_cont")
         c_dict = world_hierarchy.get(sb_cont, {})
@@ -1060,7 +1129,7 @@ with st.sidebar:
                 st.rerun()
 
 # -------------------------------------------------------------
-# 11. 頂部雙重呼叫欄 (標題 + 直接切換地區按鈕)
+# 12. 頂部雙重呼叫欄 (標題 + 直接切換地區按鈕)
 # -------------------------------------------------------------
 c_head_title, c_head_btn = st.columns([3.5, 1.2])
 with c_head_title:
@@ -1070,7 +1139,7 @@ with c_head_btn:
         open_location_dialog()
 
 # -------------------------------------------------------------
-# 12. 天氣資料獲取與運算 (12 小時預報)
+# 13. 天氣資料獲取與運算 (12 小時預報)
 # -------------------------------------------------------------
 weather_data, aqi_data = fetch_weather_and_aqi(active_lat, active_lon)
 
@@ -1119,7 +1188,7 @@ intro, w_head, w_desc, d_head, d_desc, sport_tip, commute_tip, pack_items, uv_st
 )
 
 # -------------------------------------------------------------
-# 13. 【核心焦點】自適應高質感動態深藍氣象大卡片
+# 14. 【核心焦點】自適應高質感動態深藍氣象大卡片
 # -------------------------------------------------------------
 st.markdown(
     f"""
@@ -1170,7 +1239,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------
-# 14. 【生活小幫手】(預設收折，整齊俐落)
+# 15. 【生活小幫手】(預設收折，整齊俐落)
 # -------------------------------------------------------------
 st.markdown("##### 💡 生活小幫手")
 st.markdown(f'<div class="compact-tip-box">✨ <strong>出門指引：</strong>{intro}</div>', unsafe_allow_html=True)
@@ -1191,7 +1260,7 @@ with st.expander(f"🎒 **隨身行囊建議**", expanded=False):
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 15. 未來 12 小時即時預報
+# 16. 未來 12 小時即時預報
 # -------------------------------------------------------------
 st.markdown("##### ⏱️ 未來 12 小時即時預報")
 
@@ -1230,7 +1299,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 16. 未來一週 (7天) 展望
+# 17. 未來一週 (7天) 展望
 # -------------------------------------------------------------
 st.markdown("##### 📅 未來一週天氣展望")
 if limit_d > 0:
@@ -1268,7 +1337,7 @@ else:
 st.markdown("---")
 
 # -------------------------------------------------------------
-# 17. 地圖置底呈現 (動態 Key 確保瞬移置中)
+# 18. 地圖置底呈現
 # -------------------------------------------------------------
 st.markdown("##### 🗺️ 觀測座標中心位置")
 
