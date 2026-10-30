@@ -1455,6 +1455,6 @@ with radar_tab2:
     cwa_radar_url = f"https://www.cwa.gov.tw/Data/radar/CV1_3600.png?v={int(time.time() // 600)}"
     st.image(
         cwa_radar_url, 
-        caption="中央氣象署全臺雷達整合回波圖（每 10 分鐘自動同步更新）", 
+        caption="中央氣象署全臺雷達整合回波圖（自動同步更新）", 
         use_container_width=True
     )
