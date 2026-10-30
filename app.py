@@ -325,7 +325,6 @@ components.html("""
         }
     };
 
-    // 啟動定時監聽，只要彈窗打開立即將新出現的選單上鎖
     lockMobileKeyboard();
     setInterval(lockMobileKeyboard, 200);
 </script>
@@ -1153,18 +1152,21 @@ cur_hum = current.get("relative_humidity_2m", 60)
 cur_wind = current.get("wind_speed_10m", 8.0)
 cur_uv = current.get("uv_index", 0.0)
 cur_code = current.get("weather_code", 0)
+cur_precip = current.get("precipitation", 0.0)
 icon, condition = resolve_weather(cur_code)
 
 raw_times = hourly.get("time", [])
 raw_temps = hourly.get("temperature_2m", [])
 raw_rains = hourly.get("precipitation_probability", [])
 raw_codes = hourly.get("weather_code", [])
+raw_precips = hourly.get("precipitation", [])
 
 limit_h = min(12, len(raw_times), len(raw_temps), len(raw_rains), len(raw_codes))
 times = [raw_times[i].split("T")[1] for i in range(limit_h)] if limit_h > 0 else []
 temps = [raw_temps[i] for i in range(limit_h)] if limit_h > 0 else []
 rains = [raw_rains[i] for i in range(limit_h)] if limit_h > 0 else []
 codes = [raw_codes[i] for i in range(limit_h)] if limit_h > 0 else []
+precips = [raw_precips[i] for i in range(limit_h)] if len(raw_precips) >= limit_h else [0.0] * limit_h
 cur_rain = rains[0] if rains else 0
 
 weekdays_zh = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"]
@@ -1375,3 +1377,84 @@ except TypeError:
         returned_objects=[]
     )
 st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------------------------------------------
+# 19. 【新增】即時降雨警示與雷達迴波圖
+# -------------------------------------------------------------
+st.markdown("---")
+st.markdown("##### 🌧️ 即時降雨警示與雷達迴波觀測")
+
+# 1. 降雨警示運算邏輯
+next_3h_rains = rains[:3] if rains else [0]
+max_next_rain_p = max(next_3h_rains) if next_3h_rains else cur_rain
+max_precip_rate = max(precips[:3]) if precips else cur_precip
+
+if cur_code in [82, 95, 96] or max_precip_rate >= 10.0 or max_next_rain_p >= 80:
+    alert_badge = "🚨 劇烈對流 / 強降雨警報"
+    alert_bg = "#fef2f2"
+    alert_border = "#fca5a5"
+    alert_text = "#991b1b"
+    alert_detail = f"觀測區當前或未來數小時內有劇烈降雨或對流雷雨風險（降水機率高達 <strong>{max_next_rain_p}%</strong>，預估降水率達 <strong>{max_precip_rate:.1f} mm/h</strong>）。行車請特別留意積水、視線不良與雷擊，非必要請減少戶外滯留！"
+elif max_precip_rate > 0.5 or max_next_rain_p >= 50 or cur_code in [61, 63, 65, 80, 81]:
+    alert_badge = "⚠️ 短暫陣雨 / 明顯降水警戒"
+    alert_bg = "#fff7ed"
+    alert_border = "#fdba74"
+    alert_text = "#9a3412"
+    alert_detail = f"近期有明顯降雨雲系發展或通過（降雨機率 <strong>{max_next_rain_p}%</strong>）。外出請務必隨身攜帶雨具，騎車或行走請注意路面水溝蓋與標線濕滑。"
+elif max_next_rain_p >= 30 or cur_code in [51]:
+    alert_badge = "🌦️ 局部微雨 / 局部飄雨提醒"
+    alert_bg = "#fefce8"
+    alert_border = "#fde047"
+    alert_text = "#854d0e"
+    alert_detail = f"天空雲量偏多，未來數小時內有零星飄雨或毛毛雨可能（降水機率約 <strong>{max_next_rain_p}%</strong>）。天色微陰，建議出門隨身攜帶輕便折疊傘備用。"
+else:
+    alert_badge = "✅ 無即時降雨威脅 / 天候平穩"
+    alert_bg = "#f0fdf4"
+    alert_border = "#86efac"
+    alert_text = "#166534"
+    alert_detail = f"未來數小時內降水機率極低（最高僅 <strong>{max_next_rain_p}%</strong>），無明顯降雨對流胞移入，天候相對乾爽穩定，極為適宜各項外出與通勤行程。"
+
+st.markdown(
+    f"""
+    <div style="background: {alert_bg}; border: 1px solid {alert_border}; border-radius: 14px; padding: 13px 16px; margin-bottom: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div style="font-size: 15px; font-weight: 700; color: {alert_text}; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            {alert_badge}
+        </div>
+        <div style="font-size: 13.5px; color: #334155; line-height: 1.6;">
+            {alert_detail}
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# 2. 雷達迴波圖呈現 (提供動態互動雷達與氣象署雷達切換)
+radar_tab1, radar_tab2 = st.tabs(["🌐 全球即時動態雷達 (互動掃描)", "🇹🇼 臺灣中央氣象署雷達迴波"])
+
+with radar_tab1:
+    st.caption(f"📍 中心已鎖定至 **{display_location_text}**（經緯度：{active_lat:.2f}, {active_lon:.2f}），下方可拖曳地圖或點擊時間軸播放雲雨動態：")
+    components.html(
+        f"""
+        <iframe src="https://www.rainviewer.com/map.html?loc={active_lat},{active_lon},8&oFa=0&oC=1&oU=0&oCS=1&oF=0&oAP=1&c=3&o=83&lm=1&layer=radar&sm=1&sn=1" 
+                width="100%" 
+                height="440" 
+                frameborder="0" 
+                style="border: 1px solid #cbd5e1; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);"
+                allowfullscreen>
+        </iframe>
+        """,
+        height=450
+    )
+
+with radar_tab2:
+    is_taiwan_area = any(k in active_name for k in ["臺灣", "台灣", "臺北", "新北", "臺中", "高雄", "臺南", "桃園", "基隆", "新竹", "苗栗", "彰化", "南投", "雲林", "嘉義", "屏東", "宜蘭", "花蓮", "臺東", "澎湖", "金門", "連江"])
+    if not is_taiwan_area:
+        st.info("💡 目前選取為國外城市。若需查看臺灣全區雷達迴波，可切換至臺灣任一縣市，或參考本頁提供的全臺即時雷達：")
+    
+    # 加上時間戳破除快取，確保取得氣象署最新發布之雷達掃描
+    cwa_radar_url = f"https://www.cwa.gov.tw/Data/radar/CV1_3600.png?v={int(time.time() // 600)}"
+    st.image(
+        cwa_radar_url, 
+        caption="中央氣象署全臺雷達整合回波圖（每 10 分鐘自動同步更新）", 
+        use_container_width=True
+    )
